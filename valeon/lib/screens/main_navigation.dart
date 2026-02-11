@@ -1,0 +1,50 @@
+import 'package:flutter/material.dart';
+import '../widgets/custom_bottom_nav.dart';
+import 'home_screen.dart';
+import 'scan_screen.dart';
+import 'library_screen.dart';
+import 'profile_screen.dart';
+
+class MainNavigation extends StatefulWidget {
+  const MainNavigation({Key? key}) : super(key: key);
+
+  @override
+  State<MainNavigation> createState() => _MainNavigationState();
+}
+
+class _MainNavigationState extends State<MainNavigation> {
+  int _currentIndex = 0;
+  
+  late final List<Widget> _screens;
+  
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const HomeScreenContent(),
+      const ScanScreenContent(),
+      const LibraryScreenContent(),
+      const ProfileScreenContent(),
+    ];
+  }
+
+  void _onNavTap(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: _currentIndex,
+        onTap: _onNavTap,
+      ),
+    );
+  }
+}
