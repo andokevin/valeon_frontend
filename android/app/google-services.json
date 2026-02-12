@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "193289204952",
+    "project_id": "valeon-bab93",
+    "storage_bucket": "valeon-bab93.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:193289204952:android:2bafc0360c1c773a76d3ad",
+        "android_client_info": {
+          "package_name": "com.app.valeon"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "193289204952-pgakd07cer774sve6vipf5ptgnip0m8n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjO063bUZnZNusrWR7MAR9N8Egjxl52QQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "193289204952-pgakd07cer774sve6vipf5ptgnip0m8n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
