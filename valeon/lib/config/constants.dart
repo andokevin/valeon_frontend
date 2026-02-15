@@ -66,11 +66,11 @@ class AppSizes {
   
   // Largeurs
   static const double trendingCardWidth = 110.0;
-  static const double trendingCardHeight = 150.0; // AUGMENTÉ de 140 à 150
+  static const double trendingCardHeight = 150.0;
   
   // Scan circle
-  static const double scanCircleOuter = 220.0; // AUGMENTÉ de 200 à 220
-  static const double scanCircleInner = 180.0; // AUGMENTÉ de 160 à 180
+  static const double scanCircleOuter = 220.0;
+  static const double scanCircleInner = 180.0;
   static const double scanCircleBorder = 8.0;
 }
 
@@ -177,4 +177,102 @@ class AppStrings {
   static const String photos = 'Photos';
   static const String playlists = 'Playlists';
   static const String favorites = 'Favoris';
+}
+
+/// Helper pour adapter les layouts selon la taille de l'écran.
+/// Seuil tablette : largeur >= 600dp (standard Material Design).
+class ResponsiveHelper {
+  static bool isTablet(BuildContext context) {
+    return MediaQuery.of(context).size.shortestSide >= 600;
+  }
+
+  /// Largeur maximale du contenu centré sur tablette
+  static double maxContentWidth(BuildContext context) {
+    return isTablet(context) ? 700.0 : double.infinity;
+  }
+
+  /// Padding horizontal adapté
+  static double paddingScreen(BuildContext context) {
+    return isTablet(context) ? 40.0 : AppSizes.paddingScreen;
+  }
+
+  /// Taille du cercle de scan extérieur
+  static double scanCircleOuter(BuildContext context) {
+    return isTablet(context) ? 300.0 : AppSizes.scanCircleOuter;
+  }
+
+  /// Taille de l'icône centrale du scan
+  static double iconScanCenter(BuildContext context) {
+    return isTablet(context) ? 110.0 : AppSizes.iconScanCenter;
+  }
+
+  /// Hauteur de la bottom nav
+  static double bottomNavHeight(BuildContext context) {
+    return isTablet(context) ? 84.0 : AppSizes.bottomNavHeight;
+  }
+
+  /// Taille des icônes de la bottom nav
+  static double bottomNavIconSize(BuildContext context) {
+    return isTablet(context) ? 32.0 : 26.0;
+  }
+
+  /// Taille du bouton central de la bottom nav
+  static double bottomNavCenterButtonSize(BuildContext context) {
+    return isTablet(context) ? 80.0 : 64.0;
+  }
+
+  /// Largeur des trending cards
+  static double trendingCardWidth(BuildContext context) {
+    return isTablet(context) ? 160.0 : AppSizes.trendingCardWidth;
+  }
+
+  /// Hauteur des trending cards
+  static double trendingCardHeight(BuildContext context) {
+    return isTablet(context) ? 210.0 : AppSizes.trendingCardHeight;
+  }
+
+  /// Taille du logo sur splash/login
+  static double logoSize(BuildContext context) {
+    return isTablet(context) ? 180.0 : 120.0;
+  }
+
+  /// Taille de l'icône du logo
+  static double logoIconSize(BuildContext context) {
+    return isTablet(context) ? 90.0 : 60.0;
+  }
+
+  /// Taille du titre splash
+  static double splashTitleSize(BuildContext context) {
+    return isTablet(context) ? 64.0 : 48.0;
+  }
+
+  /// Illustration login/signup
+  static double illustrationSize(BuildContext context) {
+    return isTablet(context) ? 200.0 : 150.0;
+  }
+
+  /// Taille de l'icône dans l'illustration
+  static double illustrationIconSize(BuildContext context) {
+    return isTablet(context) ? 110.0 : 80.0;
+  }
+
+  /// Hauteur de la cover image sur ResultScreen
+  static double resultCoverHeight(BuildContext context) {
+    return isTablet(context) ? 340.0 : 250.0;
+  }
+
+  /// Nombre de colonnes pour la grille photos (LibraryScreen)
+  static int photoGridColumns(BuildContext context) {
+    return isTablet(context) ? 3 : 2;
+  }
+
+  /// FontSize titre large adapté
+  static double titleLargeFontSize(BuildContext context) {
+    return isTablet(context) ? 36.0 : 28.0;
+  }
+
+  /// FontSize titre medium adapté
+  static double titleMediumFontSize(BuildContext context) {
+    return isTablet(context) ? 28.0 : 22.0;
+  }
 }

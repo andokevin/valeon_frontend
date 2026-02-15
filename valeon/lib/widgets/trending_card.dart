@@ -17,10 +17,13 @@ class TrendingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cardWidth = ResponsiveHelper.trendingCardWidth(context);
+    final isTablet = ResponsiveHelper.isTablet(context);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: AppSizes.trendingCardWidth,
+        width: cardWidth,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
@@ -34,7 +37,7 @@ class TrendingCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min, // AJOUTÉ
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Image
             ClipRRect(
@@ -42,7 +45,7 @@ class TrendingCard extends StatelessWidget {
                 top: Radius.circular(AppSizes.radiusMedium),
               ),
               child: Container(
-                height: 90,
+                height: isTablet ? 130.0 : 90.0,
                 width: double.infinity,
                 color: Colors.grey[300],
                 child: imageUrl.startsWith('http')
@@ -50,27 +53,27 @@ class TrendingCard extends StatelessWidget {
                         imageUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          return _placeholderImage();
+                          return _placeholderImage(isTablet);
                         },
                       )
-                    : _placeholderImage(),
+                    : _placeholderImage(isTablet),
               ),
             ),
             
             // Texte
-            Expanded( // CHANGÉ de Padding à Expanded
+            Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center, // AJOUTÉ
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       title,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textDark,
                         fontWeight: FontWeight.w600,
-                        fontSize: 13, // RÉDUIT
+                        fontSize: isTablet ? 15.0 : 13.0,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -80,7 +83,7 @@ class TrendingCard extends StatelessWidget {
                       subtitle,
                       style: AppTextStyles.bodySmall.copyWith(
                         color: Colors.grey[600],
-                        fontSize: 11, // RÉDUIT
+                        fontSize: isTablet ? 13.0 : 11.0,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -95,12 +98,12 @@ class TrendingCard extends StatelessWidget {
     );
   }
   
-  Widget _placeholderImage() {
+  Widget _placeholderImage(bool isTablet) {
     return Container(
       color: Colors.grey[300],
-      child: const Icon(
+      child: Icon(
         Icons.image,
-        size: 40,
+        size: isTablet ? 56.0 : 40.0,
         color: Colors.grey,
       ),
     );

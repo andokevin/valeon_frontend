@@ -27,20 +27,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez remplir tous les champs'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-    
     setState(() {
       _isLoading = true;
     });
-    
+
     Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -52,160 +42,172 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final illustrationSize = ResponsiveHelper.illustrationSize(context);
+    final illustrationIconSize = ResponsiveHelper.illustrationIconSize(context);
+
     return Scaffold(
       body: SpaceBackground(
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSizes.paddingScreen),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildIllustration(),
-                  
-                  const SizedBox(height: 40),
-                  
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Connexion',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        CustomTextField(
-                          hintText: 'Email',
-                          prefixIcon: Icons.email_outlined,
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        CustomTextField(
-                          hintText: 'Mot de passe',
-                          prefixIcon: Icons.lock_outline,
-                          obscureText: true,
-                          controller: _passwordController,
-                        ),
-                        
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {},
-                            child: const Text(
-                              'Mot de passe oublié ?',
-                              style: TextStyle(
-                                color: AppColors.primaryBlue,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 8),
-                        
-                        CustomButton(
-                          text: 'Se Connecter',
-                          onPressed: _login,
-                          isLoading: _isLoading,
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        Row(
-                          children: [
-                            const Expanded(child: Divider()),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Text(
-                                'Ou continuez avec',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                            const Expanded(child: Divider()),
-                          ],
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SocialButton(
-                              platform: 'Google',
-                              onTap: () {},
-                            ),
-                            const SizedBox(width: 16),
-                            SocialButton(
-                              platform: 'Facebook',
-                              onTap: () {},
-                            ),
-                            const SizedBox(width: 16),
-                            SocialButton(
-                              platform: 'Apple',
-                              onTap: () {},
+              padding: EdgeInsets.all(ResponsiveHelper.paddingScreen(context)),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildIllustration(illustrationSize, illustrationIconSize),
+                      
+                      SizedBox(height: isTablet ? 52.0 : 40.0),
+                      
+                      Container(
+                        padding: EdgeInsets.all(isTablet ? 36.0 : 24.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(isTablet ? 32.0 : 24.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
                             ),
                           ],
                         ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: Column(
                           children: [
                             Text(
-                              'Pas encore de compte ? ',
+                              'Connexion',
                               style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
+                                fontSize: isTablet ? 30.0 : 24.0,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
                               ),
                             ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const SignupScreen(),
+                            
+                            SizedBox(height: isTablet ? 32.0 : 24.0),
+                            
+                            CustomTextField(
+                              hintText: 'Email',
+                              prefixIcon: Icons.email_outlined,
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                            
+                            SizedBox(height: isTablet ? 20.0 : 16.0),
+                            
+                            CustomTextField(
+                              hintText: 'Mot de passe',
+                              prefixIcon: Icons.lock_outline,
+                              obscureText: true,
+                              controller: _passwordController,
+                            ),
+                            
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {},
+                                child: Text(
+                                  'Mot de passe oublié ?',
+                                  style: TextStyle(
+                                    color: AppColors.primaryBlue,
+                                    fontSize: isTablet ? 15.0 : 13.0,
                                   ),
-                                );
-                              },
-                              child: const Text(
-                                'Inscrivez-vous',
-                                style: TextStyle(
-                                  color: AppColors.primaryBlue,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
+                            
+                            const SizedBox(height: 8),
+                            
+                            CustomButton(
+                              text: 'Se Connecter',
+                              onPressed: _login,
+                              isLoading: _isLoading,
+                            ),
+                            
+                            SizedBox(height: isTablet ? 32.0 : 24.0),
+                            
+                            Row(
+                              children: [
+                                const Expanded(child: Divider()),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: Text(
+                                    'Ou continuez avec',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: isTablet ? 15.0 : 13.0,
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(child: Divider()),
+                              ],
+                            ),
+                            
+                            SizedBox(height: isTablet ? 32.0 : 24.0),
+                            
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SocialButton(
+                                  platform: 'Google',
+                                  onTap: _login,
+                                  size: isTablet ? 64.0 : 52.0,
+                                ),
+                                SizedBox(width: isTablet ? 24.0 : 16.0),
+                                SocialButton(
+                                  platform: 'Facebook',
+                                  onTap: _login,
+                                  size: isTablet ? 64.0 : 52.0,
+                                ),
+                                SizedBox(width: isTablet ? 24.0 : 16.0),
+                                SocialButton(
+                                  platform: 'Apple',
+                                  onTap: _login,
+                                  size: isTablet ? 64.0 : 52.0,
+                                ),
+                              ],
+                            ),
+                            
+                            SizedBox(height: isTablet ? 32.0 : 24.0),
+                            
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Pas encore de compte ? ',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: isTablet ? 16.0 : 14.0,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const SignupScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    'Inscrivez-vous',
+                                    style: TextStyle(
+                                      color: AppColors.primaryBlue,
+                                      fontSize: isTablet ? 16.0 : 14.0,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -214,10 +216,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildIllustration() {
+  Widget _buildIllustration(double size, double iconSize) {
     return Container(
-      width: 150,
-      height: 150,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
@@ -226,9 +228,9 @@ class _LoginScreenState extends State<LoginScreen> {
           width: 2,
         ),
       ),
-      child: const Icon(
+      child: Icon(
         Icons.phone_iphone,
-        size: 80,
+        size: iconSize,
         color: Colors.white,
       ),
     );

@@ -7,7 +7,7 @@ class CustomButton extends StatelessWidget {
   final Color? backgroundColor;
   final Color? textColor;
   final double? width;
-  final double height;
+  final double? height;
   final IconData? icon;
   final bool isLoading;
   
@@ -18,16 +18,21 @@ class CustomButton extends StatelessWidget {
     this.backgroundColor,
     this.textColor,
     this.width,
-    this.height = AppSizes.buttonHeight,
+    this.height,
     this.icon,
     this.isLoading = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final btnHeight = height ?? (isTablet ? 62.0 : AppSizes.buttonHeight);
+    final iconSize = isTablet ? 24.0 : 20.0;
+    final fontSize = isTablet ? 18.0 : 16.0;
+
     return SizedBox(
       width: width ?? double.infinity,
-      height: height,
+      height: btnHeight,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -39,10 +44,10 @@ class CustomButton extends StatelessWidget {
           elevation: 0,
         ),
         child: isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
+            ? SizedBox(
+                width: isTablet ? 28.0 : 24.0,
+                height: isTablet ? 28.0 : 24.0,
+                child: const CircularProgressIndicator(
                   color: Colors.white,
                   strokeWidth: 2,
                 ),
@@ -51,12 +56,14 @@ class CustomButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 20),
+                    Icon(icon, size: iconSize),
                     const SizedBox(width: 8),
                   ],
                   Text(
                     text,
-                    style: AppTextStyles.button,
+                    style: AppTextStyles.button.copyWith(
+                      fontSize: fontSize,
+                    ),
                   ),
                 ],
               ),

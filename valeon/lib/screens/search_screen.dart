@@ -15,7 +15,6 @@ class _SearchScreenState extends State<SearchScreen> {
   String _searchQuery = '';
   bool _isSearching = false;
 
-  // Données de recherche simulées
   final List<Map<String, dynamic>> _allResults = [
     {
       'title': 'Blinding Lights',
@@ -101,7 +100,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   List<Map<String, dynamic>> _filteredResults = [];
 
-  // Suggestions rapides selon la maquette
   final List<Map<String, dynamic>> _trendingSuggestions = [
     {'title': 'Blinding Lights', 'type': 'music'},
     {'title': 'Inception', 'type': 'film'},
@@ -153,42 +151,44 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       body: SpaceBackground(
         child: SafeArea(
-          child: Column(
-            children: [
-              // Header avec barre de recherche
-              _buildSearchHeader(),
-
-              const SizedBox(height: 16),
-
-              // Contenu
-              Expanded(
-                child: _isSearching
-                    ? _buildSearchResults()
-                    : _buildSuggestionsContent(),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveHelper.maxContentWidth(context),
               ),
-            ],
+              child: Column(
+                children: [
+                  _buildSearchHeader(context),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: _isSearching
+                        ? _buildSearchResults(context)
+                        : _buildSuggestionsContent(context),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSearchHeader() {
+  Widget _buildSearchHeader(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Padding(
-      padding: const EdgeInsets.all(AppSizes.paddingScreen),
+      padding: EdgeInsets.all(ResponsiveHelper.paddingScreen(context)),
       child: Row(
         children: [
-          // Bouton retour
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
               color: AppColors.textPrimary,
-              size: 22,
+              size: isTablet ? 28.0 : 22.0,
             ),
           ),
 
-          // Barre de recherche
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -205,7 +205,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   Icon(
                     Icons.search,
                     color: AppColors.textSecondary,
-                    size: 20,
+                    size: isTablet ? 24.0 : 20.0,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -213,18 +213,21 @@ class _SearchScreenState extends State<SearchScreen> {
                       controller: _searchController,
                       onChanged: _onSearchChanged,
                       autofocus: true,
-                      style: AppTextStyles.bodyMedium,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontSize: isTablet ? 17.0 : 14.0,
+                      ),
                       decoration: InputDecoration(
                         hintText: AppStrings.searchPlaceholder,
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.textSecondary,
+                          fontSize: isTablet ? 17.0 : 14.0,
                         ),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         filled: false,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 14,
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: isTablet ? 18.0 : 14.0,
                         ),
                       ),
                     ),
@@ -238,7 +241,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: Icon(
                         Icons.close,
                         color: AppColors.textSecondary,
-                        size: 20,
+                        size: isTablet ? 24.0 : 20.0,
                       ),
                     ),
                 ],
@@ -250,19 +253,23 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildSuggestionsContent() {
+  Widget _buildSuggestionsContent(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = ResponsiveHelper.paddingScreen(context);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSizes.paddingScreen),
+      padding: EdgeInsets.all(hPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Trending
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Trending',
-                style: AppTextStyles.titleSmall.copyWith(fontSize: 18),
+                style: AppTextStyles.titleSmall.copyWith(
+                  fontSize: isTablet ? 22.0 : 18.0,
+                ),
               ),
               TextButton(
                 onPressed: () {},
@@ -270,6 +277,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   'Voir tout',
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.primaryBlue,
+                    fontSize: isTablet ? 16.0 : 14.0,
                   ),
                 ),
               ),
@@ -278,37 +286,40 @@ class _SearchScreenState extends State<SearchScreen> {
 
           const SizedBox(height: 12),
 
-          // Suggestions rapides
           ..._trendingSuggestions.map((suggestion) {
-            return _buildSuggestionItem(suggestion);
+            return _buildSuggestionItem(context, suggestion, isTablet);
           }).toList(),
 
           const SizedBox(height: 32),
 
-          // Catégories
           Text(
             'Catégories',
-            style: AppTextStyles.titleSmall.copyWith(fontSize: 18),
+            style: AppTextStyles.titleSmall.copyWith(
+              fontSize: isTablet ? 22.0 : 18.0,
+            ),
           ),
 
           const SizedBox(height: 16),
 
-          // Grid catégories
           Row(
             children: [
               Expanded(
                 child: _buildCategoryCard(
+                  context: context,
                   icon: Icons.music_note,
                   label: 'Musiques',
                   color: AppColors.primaryBlue,
+                  isTablet: isTablet,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildCategoryCard(
+                  context: context,
                   icon: Icons.movie,
                   label: 'Films',
                   color: const Color(0xFF9B59B6),
+                  isTablet: isTablet,
                 ),
               ),
             ],
@@ -320,17 +331,21 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               Expanded(
                 child: _buildCategoryCard(
+                  context: context,
                   icon: Icons.image,
                   label: 'Images',
                   color: const Color(0xFF2ECC71),
+                  isTablet: isTablet,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildCategoryCard(
+                  context: context,
                   icon: Icons.video_library,
                   label: 'Vidéos',
                   color: const Color(0xFFE67E22),
+                  isTablet: isTablet,
                 ),
               ),
             ],
@@ -340,7 +355,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildSuggestionItem(Map<String, dynamic> suggestion) {
+  Widget _buildSuggestionItem(BuildContext context, Map<String, dynamic> suggestion, bool isTablet) {
     IconData icon;
     switch (suggestion['type']) {
       case 'music':
@@ -355,6 +370,9 @@ class _SearchScreenState extends State<SearchScreen> {
       default:
         icon = Icons.search;
     }
+
+    final thumbSize = isTablet ? 52.0 : 40.0;
+    final thumbIconSize = isTablet ? 26.0 : 20.0;
 
     return GestureDetector(
       onTap: () {
@@ -374,8 +392,8 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: thumbSize,
+              height: thumbSize,
               decoration: BoxDecoration(
                 color: AppColors.primaryBlue.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
@@ -383,7 +401,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Icon(
                 icon,
                 color: AppColors.primaryBlue,
-                size: 20,
+                size: thumbIconSize,
               ),
             ),
             const SizedBox(width: 14),
@@ -392,13 +410,14 @@ class _SearchScreenState extends State<SearchScreen> {
                 suggestion['title'],
                 style: AppTextStyles.bodyLarge.copyWith(
                   fontWeight: FontWeight.w500,
+                  fontSize: isTablet ? 17.0 : 16.0,
                 ),
               ),
             ),
             Icon(
               Icons.north_west,
               color: AppColors.textSecondary,
-              size: 18,
+              size: isTablet ? 22.0 : 18.0,
             ),
           ],
         ),
@@ -407,9 +426,11 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildCategoryCard({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required Color color,
+    required bool isTablet,
   }) {
     return GestureDetector(
       onTap: () {
@@ -417,7 +438,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _onSearchChanged(label);
       },
       child: Container(
-        height: 80,
+        height: isTablet ? 100.0 : 80.0,
         decoration: BoxDecoration(
           color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
@@ -431,7 +452,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               icon,
               color: color,
-              size: 28,
+              size: isTablet ? 34.0 : 28.0,
             ),
             const SizedBox(width: 10),
             Text(
@@ -439,6 +460,7 @@ class _SearchScreenState extends State<SearchScreen> {
               style: AppTextStyles.bodyLarge.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
+                fontSize: isTablet ? 18.0 : 16.0,
               ),
             ),
           ],
@@ -447,7 +469,10 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildSearchResults() {
+  Widget _buildSearchResults(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = ResponsiveHelper.paddingScreen(context);
+
     if (_filteredResults.isEmpty) {
       return Center(
         child: Column(
@@ -456,13 +481,14 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               Icons.search_off,
               color: AppColors.textSecondary,
-              size: 60,
+              size: isTablet ? 80.0 : 60.0,
             ),
             const SizedBox(height: 16),
             Text(
               'Aucun résultat pour "$_searchQuery"',
               style: AppTextStyles.bodyLarge.copyWith(
                 color: AppColors.textSecondary,
+                fontSize: isTablet ? 20.0 : 16.0,
               ),
               textAlign: TextAlign.center,
             ),
@@ -471,6 +497,7 @@ class _SearchScreenState extends State<SearchScreen> {
               'Essayez un autre mot-clé',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary.withOpacity(0.7),
+                fontSize: isTablet ? 16.0 : 14.0,
               ),
             ),
           ],
@@ -479,17 +506,17 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(AppSizes.paddingScreen),
+      padding: EdgeInsets.all(hPadding),
       itemCount: _filteredResults.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = _filteredResults[index];
-        return _buildResultItem(item);
+        return _buildResultItem(context, item, isTablet);
       },
     );
   }
 
-  Widget _buildResultItem(Map<String, dynamic> item) {
+  Widget _buildResultItem(BuildContext context, Map<String, dynamic> item, bool isTablet) {
     IconData icon;
     Color color;
 
@@ -510,6 +537,9 @@ class _SearchScreenState extends State<SearchScreen> {
         icon = Icons.search;
         color = AppColors.primaryBlue;
     }
+
+    final thumbSize = isTablet ? 70.0 : 55.0;
+    final thumbIconSize = isTablet ? 36.0 : 28.0;
 
     return GestureDetector(
       onTap: () {
@@ -538,8 +568,8 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Row(
           children: [
             Container(
-              width: 55,
-              height: 55,
+              width: thumbSize,
+              height: thumbSize,
               decoration: BoxDecoration(
                 color: color.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
@@ -550,7 +580,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Icon(
                 icon,
                 color: color,
-                size: 28,
+                size: thumbIconSize,
               ),
             ),
             const SizedBox(width: 14),
@@ -562,7 +592,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     item['title'],
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: isTablet ? 18.0 : 16.0,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -570,7 +600,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     item['artist'],
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
-                      fontSize: 14,
+                      fontSize: isTablet ? 15.0 : 14.0,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -589,7 +619,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           item['genre'],
                           style: AppTextStyles.bodySmall.copyWith(
                             color: color,
-                            fontSize: 11,
+                            fontSize: isTablet ? 13.0 : 11.0,
                           ),
                         ),
                       ),
@@ -598,7 +628,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         item['year'],
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textSecondary.withOpacity(0.7),
-                          fontSize: 12,
+                          fontSize: isTablet ? 13.0 : 12.0,
                         ),
                       ),
                     ],
@@ -609,7 +639,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               Icons.arrow_forward_ios,
               color: AppColors.textSecondary,
-              size: 16,
+              size: isTablet ? 20.0 : 16.0,
             ),
           ],
         ),

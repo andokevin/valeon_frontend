@@ -13,7 +13,6 @@ class FavoritesScreen extends StatefulWidget {
 class _FavoritesScreenState extends State<FavoritesScreen> {
   int _selectedTab = 0;
 
-  // Données simulées des favoris
   final List<Map<String, dynamic>> _favoritesMusic = [
     {
       'title': 'Blinding Lights',
@@ -70,52 +69,58 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return Scaffold(
       body: SpaceBackground(
         child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-
-              const SizedBox(height: 16),
-
-              _buildTabs(),
-
-              const SizedBox(height: 16),
-
-              Expanded(
-                child: _buildContent(),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveHelper.maxContentWidth(context),
               ),
-            ],
+              child: Column(
+                children: [
+                  _buildHeader(context),
+                  const SizedBox(height: 16),
+                  _buildTabs(context),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: _buildContent(context),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Padding(
-      padding: const EdgeInsets.all(AppSizes.paddingScreen),
+      padding: EdgeInsets.all(ResponsiveHelper.paddingScreen(context)),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
               color: AppColors.textPrimary,
-              size: 22,
+              size: isTablet ? 28.0 : 22.0,
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'Mes Favoris',
-              style: AppTextStyles.titleMedium,
+              style: AppTextStyles.titleMedium.copyWith(
+                fontSize: isTablet ? 26.0 : 22.0,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
           IconButton(
             onPressed: () {},
-            icon: const Icon(
+            icon: Icon(
               Icons.search,
               color: AppColors.textPrimary,
-              size: 24,
+              size: isTablet ? 30.0 : 24.0,
             ),
           ),
         ],
@@ -123,22 +128,25 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  Widget _buildTabs() {
+  Widget _buildTabs(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingScreen),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.paddingScreen(context),
+      ),
       child: Row(
         children: [
-          _buildTab('Musiques', 0),
+          _buildTab('Musiques', 0, isTablet),
           const SizedBox(width: 8),
-          _buildTab('Films', 1),
+          _buildTab('Films', 1, isTablet),
           const SizedBox(width: 8),
-          _buildTab('Images', 2),
+          _buildTab('Images', 2, isTablet),
         ],
       ),
     );
   }
 
-  Widget _buildTab(String title, int index) {
+  Widget _buildTab(String title, int index, bool isTablet) {
     final isSelected = _selectedTab == index;
 
     return Expanded(
@@ -149,7 +157,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           });
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: isTablet ? 14.0 : 10.0,
+          ),
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.primaryBlue
@@ -167,7 +178,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textPrimary,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              fontSize: 13,
+              fontSize: isTablet ? 15.0 : 13.0,
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -178,24 +189,29 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     switch (_selectedTab) {
       case 0:
-        return _buildFavoritesList(_favoritesMusic, Icons.music_note, AppColors.primaryBlue);
+        return _buildFavoritesList(context, _favoritesMusic, Icons.music_note, AppColors.primaryBlue);
       case 1:
-        return _buildFavoritesList(_favoritesFilms, Icons.movie, const Color(0xFF9B59B6));
+        return _buildFavoritesList(context, _favoritesFilms, Icons.movie, const Color(0xFF9B59B6));
       case 2:
-        return _buildFavoritesList(_favoritesImages, Icons.image, const Color(0xFF2ECC71));
+        return _buildFavoritesList(context, _favoritesImages, Icons.image, const Color(0xFF2ECC71));
       default:
-        return _buildFavoritesList(_favoritesMusic, Icons.music_note, AppColors.primaryBlue);
+        return _buildFavoritesList(context, _favoritesMusic, Icons.music_note, AppColors.primaryBlue);
     }
   }
 
   Widget _buildFavoritesList(
+    BuildContext context,
     List<Map<String, dynamic>> items,
     IconData icon,
     Color color,
   ) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = ResponsiveHelper.paddingScreen(context);
+    final navHeight = ResponsiveHelper.bottomNavHeight(context);
+
     if (items.isEmpty) {
       return Center(
         child: Column(
@@ -204,13 +220,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             Icon(
               Icons.favorite_border,
               color: AppColors.textSecondary,
-              size: 60,
+              size: isTablet ? 80.0 : 60.0,
             ),
             const SizedBox(height: 16),
             Text(
               'Aucun favori pour le moment',
               style: AppTextStyles.bodyLarge.copyWith(
                 color: AppColors.textSecondary,
+                fontSize: isTablet ? 20.0 : 16.0,
               ),
             ),
             const SizedBox(height: 8),
@@ -218,6 +235,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               'Scannez du contenu et sauvegardez-le !',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary.withOpacity(0.7),
+                fontSize: isTablet ? 16.0 : 14.0,
               ),
               textAlign: TextAlign.center,
             ),
@@ -228,24 +246,29 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
     return ListView.separated(
       padding: EdgeInsets.only(
-        left: AppSizes.paddingScreen,
-        right: AppSizes.paddingScreen,
-        bottom: AppSizes.paddingScreen + AppSizes.bottomNavHeight + 10,
+        left: hPadding,
+        right: hPadding,
+        bottom: AppSizes.paddingScreen + navHeight + 10,
       ),
       itemCount: items.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = items[index];
-        return _buildFavoriteItem(item, icon, color);
+        return _buildFavoriteItem(context, item, icon, color, isTablet);
       },
     );
   }
 
   Widget _buildFavoriteItem(
+    BuildContext context,
     Map<String, dynamic> item,
     IconData icon,
     Color color,
+    bool isTablet,
   ) {
+    final thumbSize = isTablet ? 76.0 : 60.0;
+    final thumbIconSize = isTablet ? 40.0 : 30.0;
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -272,10 +295,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ),
         child: Row(
           children: [
-            // Miniature
             Container(
-              width: 60,
-              height: 60,
+              width: thumbSize,
+              height: thumbSize,
               decoration: BoxDecoration(
                 color: color.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
@@ -286,13 +308,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               child: Icon(
                 icon,
                 color: color,
-                size: 30,
+                size: thumbIconSize,
               ),
             ),
 
             const SizedBox(width: 14),
 
-            // Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,7 +322,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     item['title'],
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: isTablet ? 18.0 : 16.0,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -309,7 +330,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     item['artist'],
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
-                      fontSize: 14,
+                      fontSize: isTablet ? 15.0 : 14.0,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -328,7 +349,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           item['genre'],
                           style: AppTextStyles.bodySmall.copyWith(
                             color: color,
-                            fontSize: 11,
+                            fontSize: isTablet ? 13.0 : 11.0,
                           ),
                         ),
                       ),
@@ -337,7 +358,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         item['year'],
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textSecondary.withOpacity(0.7),
-                          fontSize: 12,
+                          fontSize: isTablet ? 13.0 : 12.0,
                         ),
                       ),
                     ],
@@ -346,7 +367,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               ),
             ),
 
-            // Bouton supprimer favori
             IconButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -357,10 +377,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   ),
                 );
               },
-              icon: const Icon(
+              icon: Icon(
                 Icons.favorite,
                 color: Colors.red,
-                size: 24,
+                size: isTablet ? 30.0 : 24.0,
               ),
             ),
           ],

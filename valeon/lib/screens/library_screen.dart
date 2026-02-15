@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/constants.dart';
 import '../widgets/space_background.dart';
 import 'result_screen.dart';
-import 'favorites_screen.dart'; // ✅ AJOUTÉ
+import 'favorites_screen.dart';
 
 class LibraryScreenContent extends StatefulWidget {
   const LibraryScreenContent({Key? key}) : super(key: key);
@@ -19,48 +19,58 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
     return SpaceBackground(
       child: SafeArea(
         bottom: false,
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildTabs(),
-            const SizedBox(height: 16),
-            _buildSearchBar(),
-            const SizedBox(height: 16),
-            Expanded(
-              child: _buildContent(),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: ResponsiveHelper.maxContentWidth(context),
             ),
-          ],
+            child: Column(
+              children: [
+                _buildHeader(context),
+                _buildTabs(context),
+                const SizedBox(height: 16),
+                _buildSearchBar(context),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: _buildContent(context),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Padding(
-      padding: const EdgeInsets.all(AppSizes.paddingScreen),
+      padding: EdgeInsets.all(ResponsiveHelper.paddingScreen(context)),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
               color: AppColors.textPrimary,
-              size: 22,
+              size: isTablet ? 28.0 : 22.0,
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'Écran Bibliothèque',
-              style: AppTextStyles.titleMedium,
+              style: AppTextStyles.titleMedium.copyWith(
+                fontSize: isTablet ? 26.0 : 22.0,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
           IconButton(
             onPressed: () {},
-            icon: const Icon(
+            icon: Icon(
               Icons.search,
               color: AppColors.textPrimary,
-              size: 24,
+              size: isTablet ? 30.0 : 24.0,
             ),
           ),
         ],
@@ -68,23 +78,26 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
     );
   }
 
-  Widget _buildTabs() {
+  Widget _buildTabs(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingScreen),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.paddingScreen(context),
+      ),
       child: Row(
         children: [
-          _buildTab('Musiques', 0),
+          _buildTab('Musiques', 0, context),
           const SizedBox(width: 8),
-          _buildTab('Films/Vidéos', 1),
+          _buildTab('Films/Vidéos', 1, context),
           const SizedBox(width: 8),
-          _buildTab('Photos', 2),
+          _buildTab('Photos', 2, context),
         ],
       ),
     );
   }
 
-  Widget _buildTab(String title, int index) {
+  Widget _buildTab(String title, int index, BuildContext context) {
     final isSelected = _selectedTab == index;
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     return Expanded(
       child: GestureDetector(
@@ -94,7 +107,10 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
           });
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: isTablet ? 14.0 : 10.0,
+          ),
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.primaryBlue
@@ -112,7 +128,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textPrimary,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              fontSize: 13,
+              fontSize: isTablet ? 15.0 : 13.0,
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -123,11 +139,17 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingScreen),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.paddingScreen(context),
+      ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: isTablet ? 16.0 : 12.0,
+        ),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.15),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
@@ -141,7 +163,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
             Icon(
               Icons.search,
               color: AppColors.textSecondary,
-              size: 20,
+              size: isTablet ? 24.0 : 20.0,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -149,6 +171,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                 'Reccher',
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
+                  fontSize: isTablet ? 16.0 : 14.0,
                 ),
               ),
             ),
@@ -156,7 +179,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
               '⌘C',
               style: AppTextStyles.bodySmall.copyWith(
                 color: AppColors.textSecondary,
-                fontSize: 11,
+                fontSize: isTablet ? 13.0 : 11.0,
               ),
             ),
           ],
@@ -165,121 +188,95 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     switch (_selectedTab) {
       case 0:
-        return _buildMusicContent();
+        return _buildMusicContent(context);
       case 1:
-        return _buildFilmsContent();
+        return _buildFilmsContent(context);
       case 2:
-        return _buildPhotosContent();
+        return _buildPhotosContent(context);
       default:
-        return _buildMusicContent();
+        return _buildMusicContent(context);
     }
   }
 
-  // ✅ TAB MUSIQUES
-  Widget _buildMusicContent() {
+  Widget _buildMusicContent(BuildContext context) {
+    final hPadding = ResponsiveHelper.paddingScreen(context);
+    final navHeight = ResponsiveHelper.bottomNavHeight(context);
+
     return SingleChildScrollView(
       padding: EdgeInsets.only(
-        left: AppSizes.paddingScreen,
-        right: AppSizes.paddingScreen,
-        bottom: AppSizes.paddingScreen + AppSizes.bottomNavHeight + 10,
+        left: hPadding,
+        right: hPadding,
+        bottom: AppSizes.paddingScreen + navHeight + 10,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildMusicItem('Heat Waves', 'Glass Animals', 'Il y a 2 min'),
+          _buildMusicItem(context, 'Heat Waves', 'Glass Animals', 'Il y a 2 min'),
           const SizedBox(height: 12),
-          _buildMusicItem('Sunflower', 'Post Malone & Swae Lee', 'Il y a 20 min'),
+          _buildMusicItem(context, 'Sunflower', 'Post Malone & Swae Lee', 'Il y a 20 min'),
           const SizedBox(height: 12),
-          _buildMusicItem('Blinding Lights', 'The Weeknd', 'Il y a 1 jour'),
+          _buildMusicItem(context, 'Blinding Lights', 'The Weeknd', 'Il y a 1 jour'),
           const SizedBox(height: 12),
-          _buildMusicItem('Another Love', 'Tom Odell', 'Il y a 2 jours'),
+          _buildMusicItem(context, 'Another Love', 'Tom Odell', 'Il y a 2 jours'),
           const SizedBox(height: 12),
-          _buildMusicItem('Lose Yourself', 'Eminem', 'Il y a 3 jours'),
+          _buildMusicItem(context, 'Lose Yourself', 'Eminem', 'Il y a 3 jours'),
 
           const SizedBox(height: 32),
-
-          _buildPlaylistsSection(),
-
+          _buildPlaylistsSection(context),
           const SizedBox(height: 24),
-
-          _buildFavoritesSection(),
-
+          _buildFavoritesSection(context),
           const SizedBox(height: 24),
-
-          _buildProfileSection(),
+          _buildProfileSection(context),
         ],
       ),
     );
   }
 
-  // ✅ TAB FILMS/VIDÉOS
-  Widget _buildFilmsContent() {
+  Widget _buildFilmsContent(BuildContext context) {
+    final hPadding = ResponsiveHelper.paddingScreen(context);
+    final navHeight = ResponsiveHelper.bottomNavHeight(context);
+
     return SingleChildScrollView(
       padding: EdgeInsets.only(
-        left: AppSizes.paddingScreen,
-        right: AppSizes.paddingScreen,
-        bottom: AppSizes.paddingScreen + AppSizes.bottomNavHeight + 10,
+        left: hPadding,
+        right: hPadding,
+        bottom: AppSizes.paddingScreen + navHeight + 10,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFilmItem(
-            'Inception',
-            'Christopher Nolan',
-            '2010 - Science-fiction',
-            'Il y a 2 min',
-          ),
+          _buildFilmItem(context, 'Inception', 'Christopher Nolan', '2010 - Science-fiction', 'Il y a 2 min'),
           const SizedBox(height: 12),
-          _buildFilmItem(
-            'Interstellar',
-            'Christopher Nolan',
-            '2014 - Science-fiction',
-            'Il y a 1 heure',
-          ),
+          _buildFilmItem(context, 'Interstellar', 'Christopher Nolan', '2014 - Science-fiction', 'Il y a 1 heure'),
           const SizedBox(height: 12),
-          _buildFilmItem(
-            'The Dark Knight',
-            'Christopher Nolan',
-            '2008 - Action',
-            'Il y a 2 jours',
-          ),
+          _buildFilmItem(context, 'The Dark Knight', 'Christopher Nolan', '2008 - Action', 'Il y a 2 jours'),
           const SizedBox(height: 12),
-          _buildFilmItem(
-            'Avengers: Endgame',
-            'Russo Brothers',
-            '2019 - Action',
-            'Il y a 3 jours',
-          ),
+          _buildFilmItem(context, 'Avengers: Endgame', 'Russo Brothers', '2019 - Action', 'Il y a 3 jours'),
           const SizedBox(height: 12),
-          _buildFilmItem(
-            'The Matrix',
-            'Wachowski',
-            '1999 - Science-fiction',
-            'Il y a 1 semaine',
-          ),
+          _buildFilmItem(context, 'The Matrix', 'Wachowski', '1999 - Science-fiction', 'Il y a 1 semaine'),
 
           const SizedBox(height: 32),
-
-          _buildFavoritesSection(),
-
+          _buildFavoritesSection(context),
           const SizedBox(height: 24),
-
-          _buildProfileSection(),
+          _buildProfileSection(context),
         ],
       ),
     );
   }
 
-  // ✅ TAB PHOTOS
-  Widget _buildPhotosContent() {
+  Widget _buildPhotosContent(BuildContext context) {
+    final hPadding = ResponsiveHelper.paddingScreen(context);
+    final navHeight = ResponsiveHelper.bottomNavHeight(context);
+    final columns = ResponsiveHelper.photoGridColumns(context);
+
     return SingleChildScrollView(
       padding: EdgeInsets.only(
-        left: AppSizes.paddingScreen,
-        right: AppSizes.paddingScreen,
-        bottom: AppSizes.paddingScreen + AppSizes.bottomNavHeight + 10,
+        left: hPadding,
+        right: hPadding,
+        bottom: AppSizes.paddingScreen + navHeight + 10,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,31 +284,32 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
               childAspectRatio: 0.85,
             ),
             itemCount: 6,
             itemBuilder: (context, index) {
-              return _buildPhotoCard(index);
+              return _buildPhotoCard(context, index);
             },
           ),
 
           const SizedBox(height: 32),
-
-          _buildFavoritesSection(),
-
+          _buildFavoritesSection(context),
           const SizedBox(height: 24),
-
-          _buildProfileSection(),
+          _buildProfileSection(context),
         ],
       ),
     );
   }
 
-  Widget _buildMusicItem(String title, String artist, String time) {
+  Widget _buildMusicItem(BuildContext context, String title, String artist, String time) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final thumbSize = isTablet ? 76.0 : 60.0;
+    final thumbIconSize = isTablet ? 38.0 : 30.0;
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -336,16 +334,16 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         child: Row(
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: thumbSize,
+              height: thumbSize,
               decoration: BoxDecoration(
                 color: AppColors.primaryBlue.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.music_note,
                 color: Colors.white,
-                size: 30,
+                size: thumbIconSize,
               ),
             ),
             const SizedBox(width: 14),
@@ -357,7 +355,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                     title,
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: isTablet ? 18.0 : 16.0,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -365,7 +363,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                     artist,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
-                      fontSize: 14,
+                      fontSize: isTablet ? 15.0 : 14.0,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -373,7 +371,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                     time,
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary.withOpacity(0.7),
-                      fontSize: 12,
+                      fontSize: isTablet ? 13.0 : 12.0,
                     ),
                   ),
                 ],
@@ -381,10 +379,10 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
             ),
             IconButton(
               onPressed: () {},
-              icon: const Icon(
+              icon: Icon(
                 Icons.favorite_border,
                 color: AppColors.primaryBlue,
-                size: 22,
+                size: isTablet ? 28.0 : 22.0,
               ),
             ),
           ],
@@ -393,8 +391,11 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
     );
   }
 
-  Widget _buildFilmItem(
-      String title, String director, String details, String time) {
+  Widget _buildFilmItem(BuildContext context, String title, String director, String details, String time) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final thumbSize = isTablet ? 76.0 : 60.0;
+    final thumbIconSize = isTablet ? 38.0 : 30.0;
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -420,16 +421,16 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         child: Row(
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: thumbSize,
+              height: thumbSize,
               decoration: BoxDecoration(
                 color: const Color(0xFF9B59B6).withOpacity(0.3),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.movie,
                 color: Colors.white,
-                size: 30,
+                size: thumbIconSize,
               ),
             ),
             const SizedBox(width: 14),
@@ -441,7 +442,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                     title,
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: isTablet ? 18.0 : 16.0,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -449,7 +450,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                     director,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
-                      fontSize: 14,
+                      fontSize: isTablet ? 15.0 : 14.0,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -457,7 +458,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                     details,
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary.withOpacity(0.7),
-                      fontSize: 12,
+                      fontSize: isTablet ? 13.0 : 12.0,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -465,7 +466,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                     time,
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary.withOpacity(0.5),
-                      fontSize: 11,
+                      fontSize: isTablet ? 12.0 : 11.0,
                     ),
                   ),
                 ],
@@ -473,10 +474,10 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
             ),
             IconButton(
               onPressed: () {},
-              icon: const Icon(
+              icon: Icon(
                 Icons.favorite_border,
                 color: AppColors.primaryBlue,
-                size: 22,
+                size: isTablet ? 28.0 : 22.0,
               ),
             ),
           ],
@@ -485,7 +486,8 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
     );
   }
 
-  Widget _buildPhotoCard(int index) {
+  Widget _buildPhotoCard(BuildContext context, int index) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     final List<Map<String, String>> photos = [
       {'title': 'Vincent Van Gogh', 'subtitle': 'La Nuit Étoilée - 1889'},
       {'title': 'Tour Eiffel', 'subtitle': 'Paris, France'},
@@ -527,10 +529,10 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                 child: Container(
                   width: double.infinity,
                   color: AppColors.primaryBlue.withOpacity(0.2),
-                  child: const Icon(
+                  child: Icon(
                     Icons.image,
                     color: Colors.white54,
-                    size: 50,
+                    size: isTablet ? 70.0 : 50.0,
                   ),
                 ),
               ),
@@ -544,7 +546,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                     photos[index]['title']!,
                     style: AppTextStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                      fontSize: isTablet ? 15.0 : 13.0,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -553,7 +555,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                   Text(
                     photos[index]['subtitle']!,
                     style: AppTextStyles.bodySmall.copyWith(
-                      fontSize: 11,
+                      fontSize: isTablet ? 13.0 : 11.0,
                       color: AppColors.textSecondary,
                     ),
                     maxLines: 1,
@@ -568,13 +570,16 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
     );
   }
 
-  Widget _buildPlaylistsSection() {
+  Widget _buildPlaylistsSection(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Playlists',
-          style: AppTextStyles.titleSmall.copyWith(fontSize: 18),
+          style: AppTextStyles.titleSmall.copyWith(
+            fontSize: isTablet ? 22.0 : 18.0,
+          ),
         ),
         const SizedBox(height: 16),
         Container(
@@ -591,6 +596,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
               'Aucune playlist pour le moment',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
+                fontSize: isTablet ? 16.0 : 14.0,
               ),
             ),
           ),
@@ -599,8 +605,11 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
     );
   }
 
-  // ✅ FAVORIS AVEC NAVIGATION
-  Widget _buildFavoritesSection() {
+  Widget _buildFavoritesSection(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final thumbSize = isTablet ? 62.0 : 50.0;
+    final thumbIconSize = isTablet ? 30.0 : 26.0;
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -622,16 +631,16 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         child: Row(
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: thumbSize,
+              height: thumbSize,
               decoration: BoxDecoration(
                 color: AppColors.primaryBlue.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.favorite,
                 color: AppColors.primaryBlue,
-                size: 26,
+                size: thumbIconSize,
               ),
             ),
             const SizedBox(width: 16),
@@ -643,21 +652,23 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                     'Favoris',
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: isTablet ? 18.0 : 16.0,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '3 éléments',
-                    style: AppTextStyles.bodySmall.copyWith(fontSize: 13),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontSize: isTablet ? 14.0 : 13.0,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
               color: AppColors.textPrimary,
-              size: 16,
+              size: isTablet ? 20.0 : 16.0,
             ),
           ],
         ),
@@ -665,7 +676,11 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
     );
   }
 
-  Widget _buildProfileSection() {
+  Widget _buildProfileSection(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final thumbSize = isTablet ? 62.0 : 50.0;
+    final thumbIconSize = isTablet ? 30.0 : 26.0;
+
     return GestureDetector(
       onTap: () {},
       child: Container(
@@ -680,16 +695,16 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         child: Row(
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: thumbSize,
+              height: thumbSize,
               decoration: BoxDecoration(
                 color: AppColors.primaryBlue.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.person,
                 color: AppColors.primaryBlue,
-                size: 26,
+                size: thumbIconSize,
               ),
             ),
             const SizedBox(width: 16),
@@ -701,21 +716,23 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                     'Profil',
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: isTablet ? 18.0 : 16.0,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Voir mon profil',
-                    style: AppTextStyles.bodySmall.copyWith(fontSize: 13),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontSize: isTablet ? 14.0 : 13.0,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
               color: AppColors.textPrimary,
-              size: 16,
+              size: isTablet ? 20.0 : 16.0,
             ),
           ],
         ),

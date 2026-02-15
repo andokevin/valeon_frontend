@@ -23,6 +23,11 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final verticalPadding = isTablet ? 20.0 : 16.0;
+    final iconSize = isTablet ? 24.0 : 20.0;
+    final fontSize = isTablet ? 16.0 : 14.0;
+
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
@@ -30,18 +35,23 @@ class CustomTextField extends StatelessWidget {
       validator: validator,
       style: AppTextStyles.bodyMedium.copyWith(
         color: AppColors.textDark,
+        fontSize: fontSize,
       ),
       decoration: InputDecoration(
         hintText: hintText,
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textSecondary,
+          fontSize: fontSize,
+        ),
         prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, color: AppColors.textSecondary, size: 20)
+            ? Icon(prefixIcon, color: AppColors.textSecondary, size: iconSize)
             : null,
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.white.withOpacity(0.9),
-        contentPadding: const EdgeInsets.symmetric(
+        contentPadding: EdgeInsets.symmetric(
           horizontal: 20,
-          vertical: 16,
+          vertical: verticalPadding,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
