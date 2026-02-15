@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import '../config/constants.dart';
 import '../widgets/space_background.dart';
 import '../widgets/trending_card.dart';
+import 'result_screen.dart';
+import 'search_screen.dart'; // ✅ AJOUTÉ
 
 class HomeScreenContent extends StatelessWidget {
-  const HomeScreenContent({Key? key}) : super(key: key);
+  final Function(int)? onNavigate;
+
+  const HomeScreenContent({
+    Key? key,
+    this.onNavigate,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -22,13 +29,13 @@ class HomeScreenContent extends StatelessWidget {
                   children: [
                     _buildWelcomeMessage(),
                     const SizedBox(height: 20),
-                    _buildSearchBar(),
+                    _buildSearchBar(context),
                     const SizedBox(height: 32),
                     _buildCentralScanButton(context),
                     const SizedBox(height: 16),
                     _buildInstructionText(),
                     const SizedBox(height: 40),
-                    _buildTrendingSection(),
+                    _buildTrendingSection(context),
                   ],
                 ),
               ),
@@ -63,8 +70,16 @@ class HomeScreenContent extends StatelessWidget {
             style: AppTextStyles.titleMedium,
           ),
           const Spacer(),
+          // ✅ ICÔNE LOUPE FONCTIONNELLE
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SearchScreen(),
+                ),
+              );
+            },
             icon: const Icon(
               Icons.search,
               color: AppColors.textPrimary,
@@ -93,9 +108,17 @@ class HomeScreenContent extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchBar() {
+  // ✅ BARRE DE RECHERCHE FONCTIONNELLE
+  Widget _buildSearchBar(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const SearchScreen(),
+          ),
+        );
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
@@ -132,8 +155,9 @@ class HomeScreenContent extends StatelessWidget {
     return Center(
       child: GestureDetector(
         onTap: () {
-          // Utiliser un callback pour changer de page dans MainNavigation
-          // Pour l'instant on garde ça simple
+          if (onNavigate != null) {
+            onNavigate!(1);
+          }
         },
         child: Container(
           width: AppSizes.scanCircleOuter,
@@ -198,7 +222,7 @@ class HomeScreenContent extends StatelessWidget {
     );
   }
 
-  Widget _buildTrendingSection() {
+  Widget _buildTrendingSection(BuildContext context) {
     return Column(
       children: [
         Row(
@@ -209,7 +233,14 @@ class HomeScreenContent extends StatelessWidget {
               style: AppTextStyles.titleSmall.copyWith(fontSize: 20),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SearchScreen(),
+                  ),
+                );
+              },
               child: Text(
                 AppStrings.seeAll,
                 style: AppTextStyles.bodyMedium.copyWith(
@@ -231,21 +262,60 @@ class HomeScreenContent extends StatelessWidget {
                 imageUrl: 'placeholder',
                 title: 'Film Populaire',
                 subtitle: 'Inception',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ResultScreen(
+                        title: 'Inception',
+                        artist: 'Christopher Nolan',
+                        year: '2010',
+                        genre: 'Science-fiction',
+                        description: 'Un voleur qui s\'infiltre dans les rêves des autres pour voler leurs secrets.',
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(width: AppSizes.gapMedium),
               TrendingCard(
                 imageUrl: 'placeholder',
                 title: 'Top Titres',
                 subtitle: '2019',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ResultScreen(
+                        title: 'Blinding Lights',
+                        artist: 'The Weeknd',
+                        year: '2019',
+                        genre: 'Synth-pop',
+                        description: 'Chanson populaire de The Weeknd sortie en 2019.',
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(width: AppSizes.gapMedium),
               TrendingCard(
                 imageUrl: 'placeholder',
                 title: 'Image du',
                 subtitle: 'Modern / 268',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ResultScreen(
+                        title: 'La Nuit Étoilée',
+                        artist: 'Vincent Van Gogh',
+                        year: '1889',
+                        genre: 'Post-impressionnisme',
+                        description: 'Tableau célèbre de Van Gogh représentant un ciel nocturne tourbillonnant.',
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),

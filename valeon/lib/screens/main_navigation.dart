@@ -14,19 +14,6 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
-  
-  late final List<Widget> _screens;
-  
-  @override
-  void initState() {
-    super.initState();
-    _screens = [
-      const HomeScreenContent(),
-      const ScanScreenContent(),
-      const LibraryScreenContent(),
-      const ProfileScreenContent(),
-    ];
-  }
 
   void _onNavTap(int index) {
     setState(() {
@@ -39,7 +26,19 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: [
+          // ✅ CORRIGÉ : Passer le callback onNavigate au HomeScreen
+          HomeScreenContent(
+            onNavigate: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+          ),
+          const ScanScreenContent(),
+          const LibraryScreenContent(),
+          const ProfileScreenContent(),
+        ],
       ),
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentIndex,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../config/constants.dart';
 import '../widgets/space_background.dart';
+import 'settings_screen.dart'; // ✅ AJOUTÉ
+import 'favorites_screen.dart'; // ✅ AJOUTÉ
 
 class ProfileScreenContent extends StatelessWidget {
   const ProfileScreenContent({Key? key}) : super(key: key);
@@ -12,28 +14,20 @@ class ProfileScreenContent extends StatelessWidget {
         child: Column(
           children: [
             _buildHeader(context),
-            
+
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppSizes.paddingScreen),
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
-                    
                     _buildProfileHeader(),
-                    
                     const SizedBox(height: 24),
-                    
                     _buildStats(),
-                    
                     const SizedBox(height: 24),
-                    
                     _buildBio(),
-                    
                     const SizedBox(height: 32),
-                    
-                    _buildTrendingSection(),
-                    
+                    _buildTrendingSection(context),
                     const SizedBox(height: 100),
                   ],
                 ),
@@ -65,8 +59,16 @@ class ProfileScreenContent extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
+          // ✅ BOUTON SETTINGS CORRIGÉ
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
+            },
             icon: const Icon(
               Icons.settings,
               color: AppColors.textPrimary,
@@ -125,9 +127,9 @@ class ProfileScreenContent extends StatelessWidget {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
@@ -213,7 +215,7 @@ class ProfileScreenContent extends StatelessWidget {
     );
   }
 
-  Widget _buildTrendingSection() {
+  Widget _buildTrendingSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -225,7 +227,15 @@ class ProfileScreenContent extends StatelessWidget {
               style: AppTextStyles.titleSmall,
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                // ✅ Navigation vers Favoris
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FavoritesScreen(),
+                  ),
+                );
+              },
               child: Text(
                 'Akustua',
                 style: AppTextStyles.bodyMedium.copyWith(
@@ -235,9 +245,9 @@ class ProfileScreenContent extends StatelessWidget {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         Row(
           children: [
             Expanded(
