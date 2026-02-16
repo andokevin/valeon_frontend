@@ -8,8 +8,6 @@ import '../widgets/social_button.dart';
 import '../providers/auth_provider.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
-import 'main_navigation.dart';
-import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -237,21 +235,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                   SizedBox(height: isTablet ? 32.0 : 24.0),
 
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                                  // CORRECTION ICI : Utiliser Wrap au lieu de Row
+                                  Wrap(
+                                    spacing: 16,
+                                    runSpacing: 12,
+                                    alignment: WrapAlignment.center,
                                     children: [
                                       SocialButton(
                                         platform: 'Google',
                                         onTap: _signInWithGoogle,
                                         size: isTablet ? 64.0 : 52.0,
                                       ),
-                                      SizedBox(width: isTablet ? 24.0 : 16.0),
                                       SocialButton(
                                         platform: 'Facebook',
                                         onTap: _signInWithFacebook,
                                         size: isTablet ? 64.0 : 52.0,
                                       ),
-                                      SizedBox(width: isTablet ? 24.0 : 16.0),
                                       SocialButton(
                                         platform: 'Apple',
                                         onTap: _signInWithApple,

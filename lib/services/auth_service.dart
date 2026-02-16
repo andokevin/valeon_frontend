@@ -39,6 +39,8 @@ class AuthService {
       return result.user;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Erreur inattendue: $e';
     }
   }
 
@@ -52,14 +54,31 @@ class AuthService {
       return result.user;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Erreur inattendue: $e';
     }
   }
 
   // ===== CONNEXION GOOGLE =====
   Future<User?> signInWithGoogle() async {
     try {
+      print('🟢 Démarrage Google Sign-In');
+
+      // S'assurer qu'aucun utilisateur n'est déjà connecté
+      try {
+        await _googleSignIn.signOut();
+      } catch (e) {
+        // Ignorer
+      }
+
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null;
+
+      if (googleUser == null) {
+        print('🟡 Google Sign-In annulé');
+        return null;
+      }
+
+      print('🟢 Utilisateur Google: ${googleUser.email}');
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
@@ -70,8 +89,15 @@ class AuthService {
       );
 
       UserCredential result = await _auth.signInWithCredential(credential);
+      print('🟢 Connexion Firebase réussie: ${result.user?.email}');
+
       return result.user;
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
+      print('🔴 FirebaseAuthException Google: ${e.code} - ${e.message}');
+      throw _handleAuthException(e);
+    } catch (e, stack) {
+      print('🔴 Erreur Google: $e');
+      print(stack);
       throw 'Erreur de connexion Google: $e';
     }
   }
@@ -79,12 +105,16 @@ class AuthService {
   // ===== CONNEXION APPLE =====
   Future<User?> signInWithApple() async {
     try {
+      print('🟢 Démarrage Apple Sign-In');
+
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
       );
+
+      print('🟢 Credentials Apple obtenus');
 
       final oauthCredential = OAuthProvider("apple.com").credential(
         idToken: credential.identityToken,
@@ -100,8 +130,14 @@ class AuthService {
         await result.user?.updateDisplayName(displayName);
       }
 
+      print('🟢 Connexion Apple Firebase réussie');
       return result.user;
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
+      print('🔴 FirebaseAuthException Apple: ${e.code} - ${e.message}');
+      throw _handleAuthException(e);
+    } catch (e, stack) {
+      print('🔴 Erreur Apple: $e');
+      print(stack);
       throw 'Erreur de connexion Apple: $e';
     }
   }
@@ -109,24 +145,62 @@ class AuthService {
   // ===== CONNEXION FACEBOOK =====
   Future<User?> signInWithFacebook() async {
     try {
+      print('🟢 Démarrage Facebook Sign-In');
+
       final facebookAuth = FacebookAuth.instance;
 
-      final LoginResult result = await facebookAuth.login();
+      // Lancer la connexion avec permissions
+      final LoginResult result = await facebookAuth.login(
+        permissions: ['email', 'public_profile'],
+      );
+
+      print('🟢 Statut Facebook: ${result.status}');
 
       if (result.status == LoginStatus.success) {
         final AccessToken accessToken = result.accessToken!;
+        print('🟢 Token Facebook obtenu');
 
         final OAuthCredential credential = FacebookAuthProvider.credential(
           accessToken.tokenString,
         );
 
-        UserCredential userCredential = await _auth.signInWithCredential(
-          credential,
-        );
-        return userCredential.user;
+        try {
+          UserCredential userCredential = await _auth.signInWithCredential(
+            credential,
+          );
+          print('🟢 Connexion Firebase Facebook réussie');
+          return userCredential.user;
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'account-exists-with-different-credential') {
+            print('🟡 Email déjà utilisé avec une autre méthode');
+
+            // Récupérer les infos Facebook
+            try {
+              final userData = await facebookAuth.getUserData();
+              final email = userData['email'] as String?;
+
+              if (email != null) {
+                throw 'Un compte existe déjà avec l\'email $email. Veuillez vous connecter avec votre méthode habituelle.';
+              }
+            } catch (_) {}
+
+            throw 'Un compte existe déjà avec cet email. Veuillez vous connecter avec votre méthode habituelle.';
+          }
+          rethrow;
+        }
+      } else if (result.status == LoginStatus.cancelled) {
+        print('🟡 Facebook Sign-In annulé');
+        return null;
+      } else {
+        print('🔴 Échec Facebook: ${result.message}');
+        throw 'Échec de connexion Facebook: ${result.message}';
       }
-      return null;
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
+      print('🔴 FirebaseAuthException Facebook: ${e.code} - ${e.message}');
+      throw _handleAuthException(e);
+    } catch (e, stack) {
+      print('🔴 Erreur Facebook: $e');
+      print(stack);
       throw 'Erreur de connexion Facebook: $e';
     }
   }
@@ -134,25 +208,36 @@ class AuthService {
   // ===== DÉCONNEXION =====
   Future<void> signOut() async {
     try {
-      await _googleSignIn.signOut();
-    } catch (e) {
-      // Ignorer les erreurs Google SignOut
-    }
+      print('🟢 Déconnexion en cours...');
 
-    try {
-      await _facebookSignOut();
-    } catch (e) {
-      // Ignorer les erreurs Facebook SignOut
-    }
+      // Déconnexion Google
+      try {
+        await _googleSignIn.signOut();
+      } catch (e) {
+        print('⚠️ Erreur Google SignOut ignorée: $e');
+      }
 
-    await _auth.signOut();
+      // Déconnexion Facebook
+      try {
+        await _facebookSignOut();
+      } catch (e) {
+        print('⚠️ Erreur Facebook SignOut ignorée: $e');
+      }
+
+      // Déconnexion Firebase
+      await _auth.signOut();
+      print('🟢 Déconnexion réussie');
+    } catch (e) {
+      print('🔴 Erreur lors de la déconnexion: $e');
+      rethrow;
+    }
   }
 
   Future<void> _facebookSignOut() async {
     try {
       await FacebookAuth.instance.logOut();
     } catch (e) {
-      // Ignorer les erreurs de déconnexion Facebook
+      // Ignorer
     }
   }
 
@@ -193,7 +278,18 @@ class AuthService {
         return 'Trop de tentatives. Réessayez plus tard';
       case 'network-request-failed':
         return 'Problème de connexion internet';
+      case 'account-exists-with-different-credential':
+        return 'Un compte existe déjà avec le même email. Veuillez utiliser votre méthode de connexion habituelle.';
+      case 'invalid-credential':
+        return 'Identifiants invalides';
+      case 'operation-not-allowed':
+        return 'Cette méthode de connexion n\'est pas activée';
+      case 'invalid-verification-code':
+        return 'Code de vérification invalide';
       default:
+        if (e.message != null && e.message!.contains('10')) {
+          return 'Erreur de configuration Google Sign-In. Vérifiez Firebase Console.';
+        }
         return 'Erreur: ${e.message}';
     }
   }
