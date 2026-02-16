@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "193289204952-nc8q9ov6pmm91hlja763fp2siu4hg6mv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.app.valeon",
+            "certificate_hash": "33af83e25ca0d46ec74028ad1d4be825df88f9ee"
+          }
+        },
+        {
           "client_id": "193289204952-pgakd07cer774sve6vipf5ptgnip0m8n.apps.googleusercontent.com",
           "client_type": 3
         }
