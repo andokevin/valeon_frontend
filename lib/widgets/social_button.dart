@@ -10,7 +10,7 @@ class SocialButton extends StatelessWidget {
     super.key,
     required this.platform,
     required this.onTap,
-    this.size = 52, // AUGMENTÉ de 50 à 52
+    this.size = 52,
   });
 
   @override
@@ -54,7 +54,7 @@ class SocialButton extends StatelessWidget {
       case 'twitter':
         return {
           'color': AppColors.twitter,
-          'icon': Icons.alternate_email, // Icône Twitter alternative
+          'icon': Icons.alternate_email,
           'iconColor': Colors.white,
         };
       case 'tiktok':

@@ -14,12 +14,17 @@ class PlatformButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final platformData = _getPlatformData(platform);
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final btnHeight = isTablet ? 58.0 : 44.0;
+    final iconSize = isTablet ? 26.0 : 20.0;
+    final arrowSize = isTablet ? 20.0 : 16.0;
+    final fontSize = isTablet ? 16.0 : 14.0;
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
       child: Container(
-        height: 44,
+        height: btnHeight,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: platformData['color'],
@@ -27,7 +32,7 @@ class PlatformButton extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(platformData['icon'], color: Colors.white, size: 20),
+            Icon(platformData['icon'], color: Colors.white, size: iconSize),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -35,10 +40,11 @@ class PlatformButton extends StatelessWidget {
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
+                  fontSize: fontSize,
                 ),
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+            Icon(Icons.arrow_forward_ios, color: Colors.white, size: arrowSize),
           ],
         ),
       ),

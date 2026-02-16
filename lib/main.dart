@@ -21,10 +21,12 @@ void main() async {
     ),
   );
 
-  // Orientation portrait uniquement
+  // Portrait pour mobile, portrait + landscape pour tablette
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
   ]).then((_) {
     runApp(const ValeonApp());
   });
@@ -41,7 +43,7 @@ class ValeonApp extends StatelessWidget {
         title: 'Valeon',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const AuthWrapper(), // AuthWrapper décide quel écran afficher
+        home: const AuthWrapper(),
       ),
     );
   }

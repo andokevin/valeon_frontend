@@ -13,8 +13,10 @@ class CustomBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final navHeight = ResponsiveHelper.bottomNavHeight(context);
+
     return Container(
-      height: AppSizes.bottomNavHeight,
+      height: navHeight,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -28,31 +30,49 @@ class CustomBottomNav extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(index: 0, icon: Icons.home, label: 'Accueil'),
           _buildNavItem(
+            context: context,
+            index: 0,
+            icon: Icons.home,
+            label: 'Accueil',
+          ),
+          _buildNavItem(
+            context: context,
             index: 1,
             icon: Icons.search,
             label: 'Scan',
             isCenter: true,
           ),
           _buildNavItem(
+            context: context,
             index: 2,
             icon: Icons.favorite_border,
             label: 'Favoris',
           ),
-          _buildNavItem(index: 3, icon: Icons.person_outline, label: 'Profil'),
+          _buildNavItem(
+            context: context,
+            index: 3,
+            icon: Icons.person_outline,
+            label: 'Profil',
+          ),
         ],
       ),
     );
   }
 
   Widget _buildNavItem({
+    required BuildContext context,
     required int index,
     required IconData icon,
     required String label,
     bool isCenter = false,
   }) {
     final isSelected = currentIndex == index;
+    final centerButtonSize = ResponsiveHelper.bottomNavCenterButtonSize(
+      context,
+    );
+    final iconSize = ResponsiveHelper.bottomNavIconSize(context);
+    final isTablet = ResponsiveHelper.isTablet(context);
 
     return Expanded(
       child: GestureDetector(
@@ -65,8 +85,8 @@ class CustomBottomNav extends StatelessWidget {
             children: [
               if (isCenter)
                 Container(
-                  width: 64, // AUGMENTÉ de 60 à 64
-                  height: 64, // AUGMENTÉ de 60 à 64
+                  width: centerButtonSize,
+                  height: centerButtonSize,
                   decoration: BoxDecoration(
                     color: AppColors.primaryBlue,
                     shape: BoxShape.circle,
@@ -81,7 +101,7 @@ class CustomBottomNav extends StatelessWidget {
                   child: Icon(
                     icon,
                     color: Colors.white,
-                    size: 30, // AUGMENTÉ de 28 à 30
+                    size: isTablet ? 36.0 : 30.0,
                   ),
                 )
               else
@@ -93,13 +113,13 @@ class CustomBottomNav extends StatelessWidget {
                       color: isSelected
                           ? AppColors.bottomNavActive
                           : AppColors.bottomNavInactive,
-                      size: 26, // AUGMENTÉ de 24 à 26
+                      size: iconSize,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       label,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: isTablet ? 14.0 : 12.0,
                         fontWeight: FontWeight.w500,
                         color: isSelected
                             ? AppColors.bottomNavActive

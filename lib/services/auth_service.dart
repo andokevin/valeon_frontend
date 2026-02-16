@@ -9,7 +9,6 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart'
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // ✅ CORRECTION ICI - Utiliser le constructeur standard
   final GoogleSignIn _googleSignIn = GoogleSignIn.standard();
 
   // Stream de l'utilisateur connecté
@@ -56,24 +55,20 @@ class AuthService {
     }
   }
 
-  // ===== CONNEXION GOOGLE (CORRIGÉ) =====
+  // ===== CONNEXION GOOGLE =====
   Future<User?> signInWithGoogle() async {
     try {
-      // Déclencher Google Sign-In
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
 
-      // Récupérer les infos d'authentification
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
-      // Créer les identifiants Firebase
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Connecter à Firebase
       UserCredential result = await _auth.signInWithCredential(credential);
       return result.user;
     } catch (e) {
@@ -98,7 +93,6 @@ class AuthService {
 
       UserCredential result = await _auth.signInWithCredential(oauthCredential);
 
-      // Mettre à jour le nom si disponible
       if (credential.givenName != null || credential.familyName != null) {
         final displayName =
             '${credential.givenName ?? ''} ${credential.familyName ?? ''}'
@@ -115,10 +109,8 @@ class AuthService {
   // ===== CONNEXION FACEBOOK =====
   Future<User?> signInWithFacebook() async {
     try {
-      // Vérifier que le package est disponible
       final facebookAuth = FacebookAuth.instance;
 
-      // Lancer la connexion Facebook
       final LoginResult result = await facebookAuth.login();
 
       if (result.status == LoginStatus.success) {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/constants.dart';
 import '../widgets/space_background.dart';
-import 'main_navigation.dart';
+import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen>
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                const MainNavigation(),
+                const LoginScreen(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
                   return FadeTransition(opacity: animation, child: child);
@@ -74,107 +74,128 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final logoSize = ResponsiveHelper.logoSize(context);
+    final logoIconSize = ResponsiveHelper.logoIconSize(context);
+    final splashTitleSize = ResponsiveHelper.splashTitleSize(context);
+
     return Scaffold(
       body: SpaceBackground(
         child: SafeArea(
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Spacer(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveHelper.maxContentWidth(context),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Spacer(),
 
-                AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, child) {
-                    return FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: ScaleTransition(
-                        scale: _scaleAnimation,
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 120,
-                              height: 120,
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryBlue,
-                                borderRadius: BorderRadius.circular(30),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primaryBlue.withOpacity(
-                                      0.5,
-                                    ),
-                                    blurRadius: 30,
-                                    spreadRadius: 5,
+                  AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      return FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: Column(
+                            children: [
+                              Container(
+                                width: logoSize,
+                                height: logoSize,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryBlue,
+                                  borderRadius: BorderRadius.circular(
+                                    isTablet ? 40.0 : 30.0,
                                   ),
-                                ],
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primaryBlue.withOpacity(
+                                        0.5,
+                                      ),
+                                      blurRadius: 30,
+                                      spreadRadius: 5,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.diamond,
+                                  size: logoIconSize,
+                                  color: Colors.white,
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.diamond,
-                                size: 60,
-                                color: Colors.white,
+
+                              SizedBox(height: isTablet ? 32.0 : 24.0),
+
+                              Text(
+                                AppStrings.appName,
+                                style: AppTextStyles.titleLarge.copyWith(
+                                  fontSize: splashTitleSize,
+                                  letterSpacing: 2,
+                                ),
                               ),
-                            ),
 
-                            const SizedBox(height: 24),
+                              const SizedBox(height: 8),
 
-                            Text(
-                              AppStrings.appName,
-                              style: AppTextStyles.titleLarge.copyWith(
-                                fontSize: 48,
-                                letterSpacing: 2,
+                              Text(
+                                AppStrings.tagline,
+                                style: AppTextStyles.subtitle.copyWith(
+                                  fontSize: isTablet ? 18.0 : 14.0,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            Text(
-                              AppStrings.tagline,
-                              style: AppTextStyles.subtitle.copyWith(
-                                fontSize: 14,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                      );
+                    },
+                  ),
+
+                  const Spacer(),
+
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Padding(
+                      padding: EdgeInsets.all(
+                        ResponsiveHelper.paddingScreen(context),
                       ),
-                    );
-                  },
-                ),
-
-                const Spacer(),
-
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.paddingScreen),
-                    child: Column(
-                      children: [
-                        Text('Bonjour !', style: AppTextStyles.titleMedium),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Découvrez tout ce qui\nvous entoure',
-                          style: AppTextStyles.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                      child: Column(
+                        children: [
+                          Text(
+                            'Bonjour !',
+                            style: AppTextStyles.titleMedium.copyWith(
+                              fontSize: isTablet ? 28.0 : 22.0,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Découvrez tout ce qui\nvous entoure',
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              fontSize: isTablet ? 18.0 : 16.0,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 40),
+                  const SizedBox(height: 40),
 
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.primaryBlue,
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryBlue,
+                      ),
+                      strokeWidth: 3,
                     ),
-                    strokeWidth: 3,
                   ),
-                ),
 
-                const SizedBox(height: 80),
-              ],
+                  const SizedBox(height: 80),
+                ],
+              ),
             ),
           ),
         ),

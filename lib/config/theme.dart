@@ -9,7 +9,7 @@ class AppTheme {
       primaryColor: AppColors.primaryBlue,
       scaffoldBackgroundColor: AppColors.scaffoldBackground,
       brightness: Brightness.light,
-      
+
       // Police de caractères
       textTheme: GoogleFonts.poppinsTextTheme(
         const TextTheme(
@@ -21,7 +21,7 @@ class AppTheme {
           bodySmall: AppTextStyles.bodySmall,
         ),
       ),
-      
+
       // AppBar
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -34,7 +34,7 @@ class AppTheme {
           color: AppColors.textPrimary,
         ),
       ),
-      
+
       // Boutons
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -51,12 +51,15 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Input
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
           borderSide: BorderSide.none,
@@ -74,8 +77,8 @@ class AppTheme {
           fontSize: 14,
         ),
       ),
-      
-      // Cards - CORRIGÉ
+
+      // Cards
       cardTheme: CardThemeData(
         color: AppColors.cardBackground,
         elevation: 4,
@@ -84,7 +87,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppSizes.radiusCard),
         ),
       ),
-      
+
       // Bottom Navigation
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
@@ -95,10 +98,8 @@ class AppTheme {
       ),
     );
   }
-  
+
   static ThemeData get darkTheme {
-    // Pour l'instant, on garde le même thème
-    // À implémenter si nécessaire plus tard
     return lightTheme;
   }
 }

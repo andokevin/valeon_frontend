@@ -8,7 +8,7 @@ class ContentModel {
   final String imageUrl;
   final ContentType type;
   final DateTime scannedAt;
-  
+
   ContentModel({
     required this.id,
     required this.title,
@@ -20,11 +20,11 @@ class ContentModel {
     required this.type,
     required this.scannedAt,
   });
-  
+
   String get timeAgo {
     final now = DateTime.now();
     final difference = now.difference(scannedAt);
-    
+
     if (difference.inMinutes < 60) {
       return 'Il y a ${difference.inMinutes} min';
     } else if (difference.inHours < 24) {
@@ -37,8 +37,4 @@ class ContentModel {
   }
 }
 
-enum ContentType {
-  music,
-  film,
-  image,
-}
+enum ContentType { music, film, image }

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../config/constants.dart';
 import '../widgets/space_background.dart';
 import '../providers/auth_provider.dart';
+import 'settings_screen.dart';
+import 'favorites_screen.dart';
 
 class ProfileScreenContent extends StatelessWidget {
   const ProfileScreenContent({super.key});
@@ -13,37 +15,38 @@ class ProfileScreenContent extends StatelessWidget {
       builder: (context, authProvider, child) {
         return SpaceBackground(
           child: SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context, authProvider),
-
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(AppSizes.paddingScreen),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 20),
-
-                        _buildProfileHeader(authProvider),
-
-                        const SizedBox(height: 24),
-
-                        _buildStats(),
-
-                        const SizedBox(height: 24),
-
-                        _buildBio(),
-
-                        const SizedBox(height: 32),
-
-                        _buildTrendingSection(),
-
-                        const SizedBox(height: 100),
-                      ],
-                    ),
-                  ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: ResponsiveHelper.maxContentWidth(context),
                 ),
-              ],
+                child: Column(
+                  children: [
+                    _buildHeader(context),
+
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.all(
+                          ResponsiveHelper.paddingScreen(context),
+                        ),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 20),
+                            _buildProfileHeader(context, authProvider),
+                            const SizedBox(height: 24),
+                            _buildStats(context),
+                            const SizedBox(height: 24),
+                            _buildBio(context),
+                            const SizedBox(height: 32),
+                            _buildTrendingSection(context),
+                            const SizedBox(height: 100),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         );
@@ -51,102 +54,40 @@ class ProfileScreenContent extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, AuthProvider authProvider) {
+  Widget _buildHeader(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Padding(
-      padding: const EdgeInsets.all(AppSizes.paddingScreen),
+      padding: EdgeInsets.all(ResponsiveHelper.paddingScreen(context)),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
               color: AppColors.textPrimary,
-              size: 22,
+              size: isTablet ? 28.0 : 22.0,
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'Profil',
-              style: AppTextStyles.titleMedium,
+              style: AppTextStyles.titleMedium.copyWith(
+                fontSize: isTablet ? 26.0 : 22.0,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(
-              Icons.more_vert,
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+            icon: Icon(
+              Icons.settings,
               color: AppColors.textPrimary,
-              size: 24,
-            ),
-            onSelected: (value) async {
-              if (value == 'logout') {
-                _showLogoutDialog(context, authProvider);
-              } else if (value == 'settings') {
-                // Navigation vers paramètres
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Paramètres (bientôt disponible)'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'settings',
-                child: Row(
-                  children: [
-                    Icon(Icons.settings, size: 20, color: Colors.white),
-                    SizedBox(width: 12),
-                    Text('Paramètres'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, size: 20, color: Colors.red),
-                    SizedBox(width: 12),
-                    Text('Déconnexion', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showLogoutDialog(
-    BuildContext context,
-    AuthProvider authProvider,
-  ) async {
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E2E),
-        title: const Text('Déconnexion', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'Voulez-vous vraiment vous déconnecter ?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Annuler',
-              style: TextStyle(color: Colors.white70),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await authProvider.signOut();
-            },
-            child: const Text(
-              'Se déconnecter',
-              style: TextStyle(color: Colors.red),
+              size: isTablet ? 30.0 : 24.0,
             ),
           ),
         ],
@@ -154,7 +95,11 @@ class ProfileScreenContent extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(AuthProvider authProvider) {
+  Widget _buildProfileHeader(BuildContext context, AuthProvider authProvider) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final avatarSize = isTablet ? 130.0 : 100.0;
+    final avatarIconSize = isTablet ? 66.0 : 50.0;
+
     final userName = authProvider.getUserName() ?? 'Alex Martin';
     final userEmail = authProvider.getUserEmail();
     final photoUrl = authProvider.getPhotoUrl();
@@ -164,10 +109,9 @@ class ProfileScreenContent extends StatelessWidget {
       children: [
         Stack(
           children: [
-            // Avatar
             Container(
-              width: 100,
-              height: 100,
+              width: avatarSize,
+              height: avatarSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.primaryBlue,
@@ -186,56 +130,72 @@ class ProfileScreenContent extends StatelessWidget {
                         photoUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
+                          return Icon(
                             Icons.person,
-                            size: 50,
+                            size: avatarIconSize,
                             color: Colors.white,
                           );
                         },
                       ),
                     )
-                  : const Icon(Icons.person, size: 50, color: Colors.white),
+                  : Icon(
+                      Icons.person,
+                      size: avatarIconSize,
+                      color: Colors.white,
+                    ),
             ),
-
-            // Badge de vérification
             if (isEmailVerified)
-              const Positioned(
+              Positioned(
                 bottom: 0,
                 right: 0,
-                child: CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Colors.green,
-                  child: Icon(Icons.check, size: 16, color: Colors.white),
+                child: Container(
+                  padding: EdgeInsets.all(isTablet ? 6.0 : 4.0),
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: isTablet ? 26.0 : 20.0,
+                  ),
                 ),
               ),
           ],
         ),
 
-        const SizedBox(height: 16),
+        SizedBox(height: isTablet ? 20.0 : 16.0),
 
-        // Nom et badge
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(userName, style: AppTextStyles.titleMedium),
+            Text(
+              userName,
+              style: AppTextStyles.titleMedium.copyWith(
+                fontSize: isTablet ? 28.0 : 22.0,
+              ),
+            ),
             if (isEmailVerified) ...[
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.verified,
                 color: AppColors.primaryBlue,
-                size: 22,
+                size: isTablet ? 28.0 : 22.0,
               ),
             ],
           ],
         ),
 
-        // Email
         if (userEmail != null) ...[
           const SizedBox(height: 4),
-          Text(userEmail, style: AppTextStyles.bodySmall),
+          Text(
+            userEmail,
+            style: AppTextStyles.bodySmall.copyWith(
+              fontSize: isTablet ? 16.0 : 14.0,
+            ),
+          ),
         ],
 
-        // Bouton de vérification d'email - CORRIGÉ !
         if (!isEmailVerified && authProvider.user != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
@@ -254,11 +214,12 @@ class ProfileScreenContent extends StatelessWidget {
                       );
                     }
                   },
-                  child: const Text(
+                  child: Text(
                     'Vérifier mon email',
                     style: TextStyle(
                       color: AppColors.primaryBlue,
                       fontWeight: FontWeight.w600,
+                      fontSize: isTablet ? 16.0 : 14.0,
                     ),
                   ),
                 );
@@ -269,9 +230,13 @@ class ProfileScreenContent extends StatelessWidget {
     );
   }
 
-  Widget _buildStats() {
+  Widget _buildStats(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 32.0 : 24.0,
+        vertical: isTablet ? 24.0 : 20.0,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppSizes.radiusCard),
@@ -280,22 +245,37 @@ class ProfileScreenContent extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('150', 'Scans'),
+          _buildStatItem(context, '150', 'Scans', isTablet),
           _buildDivider(),
-          _buildStatItem('500', 'Favoris'),
+          _buildStatItem(context, '500', 'Favoris', isTablet),
           _buildDivider(),
-          _buildStatItem('3500', 'Followers'),
+          _buildStatItem(context, '3500', 'Followers', isTablet),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String value, String label) {
+  Widget _buildStatItem(
+    BuildContext context,
+    String value,
+    String label,
+    bool isTablet,
+  ) {
     return Column(
       children: [
-        Text(value, style: AppTextStyles.titleMedium.copyWith(fontSize: 22)),
+        Text(
+          value,
+          style: AppTextStyles.titleMedium.copyWith(
+            fontSize: isTablet ? 28.0 : 22.0,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(label, style: AppTextStyles.bodySmall.copyWith(fontSize: 13)),
+        Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            fontSize: isTablet ? 15.0 : 13.0,
+          ),
+        ),
       ],
     );
   }
@@ -308,7 +288,8 @@ class ProfileScreenContent extends StatelessWidget {
     );
   }
 
-  Widget _buildBio() {
+  Widget _buildBio(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -319,26 +300,44 @@ class ProfileScreenContent extends StatelessWidget {
       ),
       child: Text(
         'Passionné de musique et de cinéma 🎬🎵',
-        style: AppTextStyles.bodyMedium.copyWith(fontSize: 15),
+        style: AppTextStyles.bodyMedium.copyWith(
+          fontSize: isTablet ? 18.0 : 15.0,
+        ),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  Widget _buildTrendingSection() {
+  Widget _buildTrendingSection(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final cardHeight = isTablet ? 190.0 : 150.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Tendances Valeon', style: AppTextStyles.titleSmall),
+            Text(
+              'Tendances Valeon',
+              style: AppTextStyles.titleSmall.copyWith(
+                fontSize: isTablet ? 22.0 : 18.0,
+              ),
+            ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FavoritesScreen(),
+                  ),
+                );
+              },
               child: Text(
                 'Voir tout',
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.primaryBlue,
+                  fontSize: isTablet ? 16.0 : 14.0,
                 ),
               ),
             ),
@@ -350,19 +349,39 @@ class ProfileScreenContent extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _buildTrendingCard('Sipder Vær', 'Die Indie-Reeves djüet'),
+              child: _buildTrendingCard(
+                context,
+                'Sipder Vær',
+                'Die Indie-Reeves djüet',
+                cardHeight,
+                isTablet,
+              ),
             ),
             const SizedBox(width: 12),
-            Expanded(child: _buildTrendingCard('Space Tunk', '')),
+            Expanded(
+              child: _buildTrendingCard(
+                context,
+                'Space Tunk',
+                '',
+                cardHeight,
+                isTablet,
+              ),
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildTrendingCard(String title, String subtitle) {
+  Widget _buildTrendingCard(
+    BuildContext context,
+    String title,
+    String subtitle,
+    double cardHeight,
+    bool isTablet,
+  ) {
     return Container(
-      height: 150,
+      height: cardHeight,
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
@@ -372,22 +391,26 @@ class ProfileScreenContent extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 60,
-            height: 60,
+            width: isTablet ? 76.0 : 60.0,
+            height: isTablet ? 76.0 : 60.0,
             decoration: BoxDecoration(
               color: AppColors.primaryBlue.withOpacity(0.3),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.music_note, color: Colors.white, size: 30),
+            child: Icon(
+              Icons.music_note,
+              color: Colors.white,
+              size: isTablet ? 40.0 : 30.0,
+            ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: isTablet ? 14.0 : 10.0),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
               title,
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: isTablet ? 16.0 : 14.0,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
@@ -399,7 +422,9 @@ class ProfileScreenContent extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 subtitle,
-                style: AppTextStyles.bodySmall.copyWith(fontSize: 11),
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontSize: isTablet ? 13.0 : 11.0,
+                ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

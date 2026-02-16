@@ -53,26 +53,36 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       body: SpaceBackground(
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSizes.paddingScreen),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                ),
-                const SizedBox(height: 40),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveHelper.maxContentWidth(context),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSizes.paddingScreen),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
 
-                Consumer<AuthProvider>(
-                  builder: (context, authProvider, child) {
-                    if (_emailSent) {
-                      return _buildSuccessMessage();
-                    }
-                    return _buildResetForm(authProvider);
-                  },
+                    Consumer<AuthProvider>(
+                      builder: (context, authProvider, child) {
+                        if (_emailSent) {
+                          return _buildSuccessMessage(context);
+                        }
+                        return _buildResetForm(authProvider, context);
+                      },
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -80,16 +90,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildResetForm(AuthProvider authProvider) {
+  Widget _buildResetForm(AuthProvider authProvider, BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Mot de passe oublié ?',
             style: TextStyle(
-              fontSize: 28,
+              fontSize: isTablet ? 34.0 : 28.0,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -98,17 +109,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           Text(
             'Entrez votre email pour recevoir un lien de réinitialisation',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isTablet ? 18.0 : 16.0,
               color: Colors.white.withOpacity(0.8),
             ),
           ),
           const SizedBox(height: 40),
 
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(isTablet ? 32.0 : 24.0),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.95),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(isTablet ? 32.0 : 24.0),
             ),
             child: Column(
               children: [
@@ -141,29 +152,30 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildSuccessMessage() {
+  Widget _buildSuccessMessage(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 120,
-            height: 120,
+            width: isTablet ? 180.0 : 120.0,
+            height: isTablet ? 180.0 : 120.0,
             decoration: BoxDecoration(
               color: Colors.green.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check_circle,
               color: Colors.green,
-              size: 80,
+              size: isTablet ? 110.0 : 80.0,
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Email envoyé !',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: isTablet ? 32.0 : 24.0,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -172,7 +184,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           Text(
             'Vérifiez votre boîte de réception',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isTablet ? 18.0 : 16.0,
               color: Colors.white.withOpacity(0.8),
             ),
           ),
@@ -182,7 +194,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             onPressed: () {
               Navigator.popUntil(context, (route) => route.isFirst);
             },
-            width: 250,
+            width: isTablet ? 300.0 : 250.0,
           ),
         ],
       ),
