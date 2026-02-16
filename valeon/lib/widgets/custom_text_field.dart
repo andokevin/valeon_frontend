@@ -9,9 +9,9 @@ class CustomTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
-  
+
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.hintText,
     this.prefixIcon,
     this.obscureText = false,
@@ -19,7 +19,7 @@ class CustomTextField extends StatelessWidget {
     this.keyboardType,
     this.suffixIcon,
     this.validator,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -63,10 +63,7 @@ class CustomTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          borderSide: const BorderSide(
-            color: AppColors.primaryBlue,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
         ),
       ),
     );

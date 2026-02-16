@@ -5,18 +5,18 @@ class SocialButton extends StatelessWidget {
   final String platform;
   final VoidCallback onTap;
   final double size;
-  
+
   const SocialButton({
-    Key? key,
+    super.key,
     required this.platform,
     required this.onTap,
     this.size = 52, // AUGMENTÉ de 50 à 52
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     final platformData = _getPlatformData(platform);
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -42,7 +42,7 @@ class SocialButton extends StatelessWidget {
       ),
     );
   }
-  
+
   Map<String, dynamic> _getPlatformData(String platform) {
     switch (platform.toLowerCase()) {
       case 'facebook':

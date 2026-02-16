@@ -5,7 +5,7 @@ import 'result_screen.dart';
 import 'favorites_screen.dart';
 
 class LibraryScreenContent extends StatefulWidget {
-  const LibraryScreenContent({Key? key}) : super(key: key);
+  const LibraryScreenContent({super.key});
 
   @override
   State<LibraryScreenContent> createState() => _LibraryScreenContentState();
@@ -31,9 +31,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
                 const SizedBox(height: 16),
                 _buildSearchBar(context),
                 const SizedBox(height: 16),
-                Expanded(
-                  child: _buildContent(context),
-                ),
+                Expanded(child: _buildContent(context)),
               ],
             ),
           ),
@@ -118,10 +116,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
             borderRadius: BorderRadius.circular(20),
             border: isSelected
                 ? null
-                : Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
-                  ),
+                : Border.all(color: Colors.white.withOpacity(0.3), width: 1),
           ),
           child: Text(
             title,
@@ -153,10 +148,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.15),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
         ),
         child: Row(
           children: [
@@ -214,13 +206,33 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildMusicItem(context, 'Heat Waves', 'Glass Animals', 'Il y a 2 min'),
+          _buildMusicItem(
+            context,
+            'Heat Waves',
+            'Glass Animals',
+            'Il y a 2 min',
+          ),
           const SizedBox(height: 12),
-          _buildMusicItem(context, 'Sunflower', 'Post Malone & Swae Lee', 'Il y a 20 min'),
+          _buildMusicItem(
+            context,
+            'Sunflower',
+            'Post Malone & Swae Lee',
+            'Il y a 20 min',
+          ),
           const SizedBox(height: 12),
-          _buildMusicItem(context, 'Blinding Lights', 'The Weeknd', 'Il y a 1 jour'),
+          _buildMusicItem(
+            context,
+            'Blinding Lights',
+            'The Weeknd',
+            'Il y a 1 jour',
+          ),
           const SizedBox(height: 12),
-          _buildMusicItem(context, 'Another Love', 'Tom Odell', 'Il y a 2 jours'),
+          _buildMusicItem(
+            context,
+            'Another Love',
+            'Tom Odell',
+            'Il y a 2 jours',
+          ),
           const SizedBox(height: 12),
           _buildMusicItem(context, 'Lose Yourself', 'Eminem', 'Il y a 3 jours'),
 
@@ -248,15 +260,45 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFilmItem(context, 'Inception', 'Christopher Nolan', '2010 - Science-fiction', 'Il y a 2 min'),
+          _buildFilmItem(
+            context,
+            'Inception',
+            'Christopher Nolan',
+            '2010 - Science-fiction',
+            'Il y a 2 min',
+          ),
           const SizedBox(height: 12),
-          _buildFilmItem(context, 'Interstellar', 'Christopher Nolan', '2014 - Science-fiction', 'Il y a 1 heure'),
+          _buildFilmItem(
+            context,
+            'Interstellar',
+            'Christopher Nolan',
+            '2014 - Science-fiction',
+            'Il y a 1 heure',
+          ),
           const SizedBox(height: 12),
-          _buildFilmItem(context, 'The Dark Knight', 'Christopher Nolan', '2008 - Action', 'Il y a 2 jours'),
+          _buildFilmItem(
+            context,
+            'The Dark Knight',
+            'Christopher Nolan',
+            '2008 - Action',
+            'Il y a 2 jours',
+          ),
           const SizedBox(height: 12),
-          _buildFilmItem(context, 'Avengers: Endgame', 'Russo Brothers', '2019 - Action', 'Il y a 3 jours'),
+          _buildFilmItem(
+            context,
+            'Avengers: Endgame',
+            'Russo Brothers',
+            '2019 - Action',
+            'Il y a 3 jours',
+          ),
           const SizedBox(height: 12),
-          _buildFilmItem(context, 'The Matrix', 'Wachowski', '1999 - Science-fiction', 'Il y a 1 semaine'),
+          _buildFilmItem(
+            context,
+            'The Matrix',
+            'Wachowski',
+            '1999 - Science-fiction',
+            'Il y a 1 semaine',
+          ),
 
           const SizedBox(height: 32),
           _buildFavoritesSection(context),
@@ -305,7 +347,12 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
     );
   }
 
-  Widget _buildMusicItem(BuildContext context, String title, String artist, String time) {
+  Widget _buildMusicItem(
+    BuildContext context,
+    String title,
+    String artist,
+    String time,
+  ) {
     final isTablet = ResponsiveHelper.isTablet(context);
     final thumbSize = isTablet ? 76.0 : 60.0;
     final thumbIconSize = isTablet ? 38.0 : 30.0;
@@ -315,10 +362,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ResultScreen(
-              title: title,
-              artist: artist,
-            ),
+            builder: (context) => ResultScreen(title: title, artist: artist),
           ),
         );
       },
@@ -327,9 +371,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: Row(
           children: [
@@ -391,7 +433,13 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
     );
   }
 
-  Widget _buildFilmItem(BuildContext context, String title, String director, String details, String time) {
+  Widget _buildFilmItem(
+    BuildContext context,
+    String title,
+    String director,
+    String details,
+    String time,
+  ) {
     final isTablet = ResponsiveHelper.isTablet(context);
     final thumbSize = isTablet ? 76.0 : 60.0;
     final thumbIconSize = isTablet ? 38.0 : 30.0;
@@ -401,11 +449,8 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ResultScreen(
-              title: title,
-              artist: director,
-              genre: details,
-            ),
+            builder: (context) =>
+                ResultScreen(title: title, artist: director, genre: details),
           ),
         );
       },
@@ -414,9 +459,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: Row(
           children: [
@@ -514,9 +557,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,9 +628,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.05),
             borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.15),
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.15)),
           ),
           child: Center(
             child: Text(
@@ -614,9 +653,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const FavoritesScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const FavoritesScreen()),
         );
       },
       child: Container(
@@ -624,9 +661,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: Row(
           children: [
@@ -688,9 +723,7 @@ class _LibraryScreenContentState extends State<LibraryScreenContent> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: Row(
           children: [

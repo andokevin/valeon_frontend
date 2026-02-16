@@ -4,7 +4,7 @@ import '../widgets/space_background.dart';
 import 'result_screen.dart';
 
 class ScanScreenContent extends StatefulWidget {
-  const ScanScreenContent({Key? key}) : super(key: key);
+  const ScanScreenContent({super.key});
 
   @override
   State<ScanScreenContent> createState() => _ScanScreenContentState();
@@ -168,7 +168,9 @@ class _ScanScreenContentState extends State<ScanScreenContent>
                           vertical: isTablet ? 20.0 : 16.0,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppSizes.radiusButton),
+                          borderRadius: BorderRadius.circular(
+                            AppSizes.radiusButton,
+                          ),
                         ),
                         elevation: 0,
                       ),
@@ -194,14 +196,14 @@ class _ScanScreenContentState extends State<ScanScreenContent>
                         });
                       },
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
-                        ),
+                        side: BorderSide(color: Colors.white.withOpacity(0.3)),
                         padding: EdgeInsets.symmetric(
                           vertical: isTablet ? 20.0 : 16.0,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppSizes.radiusButton),
+                          borderRadius: BorderRadius.circular(
+                            AppSizes.radiusButton,
+                          ),
                         ),
                       ),
                       child: Text(
@@ -358,7 +360,12 @@ class _ScanScreenContentState extends State<ScanScreenContent>
     );
   }
 
-  Widget _buildModeChip(ScanMode mode, IconData icon, String label, bool isTablet) {
+  Widget _buildModeChip(
+    ScanMode mode,
+    IconData icon,
+    String label,
+    bool isTablet,
+  ) {
     final isSelected = _currentMode == mode;
 
     return GestureDetector(
@@ -386,7 +393,7 @@ class _ScanScreenContentState extends State<ScanScreenContent>
                     color: AppColors.primaryBlue.withOpacity(0.4),
                     blurRadius: 10,
                     spreadRadius: 2,
-                  )
+                  ),
                 ]
               : [],
         ),
@@ -476,10 +483,7 @@ class _ScanScreenContentState extends State<ScanScreenContent>
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 6,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
                 color: AppColors.primaryBlue.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(20),
@@ -512,7 +516,8 @@ class _ScanScreenContentState extends State<ScanScreenContent>
           return AnimatedBuilder(
             animation: _animationController,
             builder: (context, child) {
-              final height = 15 +
+              final height =
+                  15 +
                   55 *
                       ((index % 2 == 0
                           ? _animationController.value
@@ -842,9 +847,4 @@ class _ScanScreenContentState extends State<ScanScreenContent>
   }
 }
 
-enum ScanMode {
-  audio,
-  image,
-  video,
-  camera,
-}
+enum ScanMode { audio, image, video, camera }

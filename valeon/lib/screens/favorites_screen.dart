@@ -4,7 +4,7 @@ import '../widgets/space_background.dart';
 import 'result_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({Key? key}) : super(key: key);
+  const FavoritesScreen({super.key});
 
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
@@ -26,7 +26,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       'artist': 'Glass Animals',
       'year': '2020',
       'genre': 'Indie Pop',
-      'description': 'Chanson populaire du groupe Glass Animals sortie en 2020.',
+      'description':
+          'Chanson populaire du groupe Glass Animals sortie en 2020.',
     },
     {
       'title': 'Sunflower',
@@ -80,9 +81,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   const SizedBox(height: 16),
                   _buildTabs(context),
                   const SizedBox(height: 16),
-                  Expanded(
-                    child: _buildContent(context),
-                  ),
+                  Expanded(child: _buildContent(context)),
                 ],
               ),
             ),
@@ -168,10 +167,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             borderRadius: BorderRadius.circular(20),
             border: isSelected
                 ? null
-                : Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
-                  ),
+                : Border.all(color: Colors.white.withOpacity(0.3), width: 1),
           ),
           child: Text(
             title,
@@ -192,13 +188,33 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget _buildContent(BuildContext context) {
     switch (_selectedTab) {
       case 0:
-        return _buildFavoritesList(context, _favoritesMusic, Icons.music_note, AppColors.primaryBlue);
+        return _buildFavoritesList(
+          context,
+          _favoritesMusic,
+          Icons.music_note,
+          AppColors.primaryBlue,
+        );
       case 1:
-        return _buildFavoritesList(context, _favoritesFilms, Icons.movie, const Color(0xFF9B59B6));
+        return _buildFavoritesList(
+          context,
+          _favoritesFilms,
+          Icons.movie,
+          const Color(0xFF9B59B6),
+        );
       case 2:
-        return _buildFavoritesList(context, _favoritesImages, Icons.image, const Color(0xFF2ECC71));
+        return _buildFavoritesList(
+          context,
+          _favoritesImages,
+          Icons.image,
+          const Color(0xFF2ECC71),
+        );
       default:
-        return _buildFavoritesList(context, _favoritesMusic, Icons.music_note, AppColors.primaryBlue);
+        return _buildFavoritesList(
+          context,
+          _favoritesMusic,
+          Icons.music_note,
+          AppColors.primaryBlue,
+        );
     }
   }
 
@@ -289,9 +305,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: Row(
           children: [
@@ -301,15 +315,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               decoration: BoxDecoration(
                 color: color.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: color.withOpacity(0.4),
-                ),
+                border: Border.all(color: color.withOpacity(0.4)),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: thumbIconSize,
-              ),
+              child: Icon(icon, color: color, size: thumbIconSize),
             ),
 
             const SizedBox(width: 14),

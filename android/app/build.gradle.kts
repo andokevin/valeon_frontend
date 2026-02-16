@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.valeon"
+    namespace = "com.app.valeon"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.valeon"
+        applicationId = "com.app.valeon"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -44,21 +44,15 @@ flutter {
     source = "../.."
 }
 dependencies {
+    // Import the Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
 
-  // Import the Firebase BoM
+    // TODO: Add the dependencies for Firebase products you want to use
+    implementation("com.google.firebase:firebase-analytics")
 
-  implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
-
-
-  // TODO: Add the dependencies for Firebase products you want to use
-
-  // When using the BoM, don't specify versions in Firebase dependencies
-
-  implementation("com.google.firebase:firebase-analytics")
-
-
-  // Add the dependencies for any other desired Firebase products
-
-  // https://firebase.google.com/docs/android/setup#available-libraries
-
+    // Ajoutez cette ligne pour Facebook SDK
+    implementation("com.facebook.android:facebook-android-sdk:latest.release")
+    
+    // Ou utilisez une version spécifique comme celle-ci (recommandé):
+    // implementation("com.facebook.android:facebook-android-sdk:17.0.0")
 }

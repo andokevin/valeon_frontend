@@ -14,7 +14,7 @@ class ResultScreen extends StatelessWidget {
   final String imageUrl;
 
   const ResultScreen({
-    Key? key,
+    super.key,
     this.title = 'Blinding Lights',
     this.artist = 'The Weeknd',
     this.year = '2019',
@@ -22,7 +22,7 @@ class ResultScreen extends StatelessWidget {
     this.description =
         'Chanson populaire du groupe Glass Animals sortie en 2020, connue pour sa mélodie accrocheuse et son atmosphère nostalgique.',
     this.imageUrl = 'placeholder',
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +172,9 @@ class ResultScreen extends StatelessWidget {
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text('✅ Sauvegardé dans vos favoris !'),
+                            content: const Text(
+                              '✅ Sauvegardé dans vos favoris !',
+                            ),
                             backgroundColor: AppColors.primaryBlue,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(

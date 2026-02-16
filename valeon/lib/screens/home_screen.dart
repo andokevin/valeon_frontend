@@ -8,10 +8,7 @@ import 'search_screen.dart';
 class HomeScreenContent extends StatelessWidget {
   final Function(int)? onNavigate;
 
-  const HomeScreenContent({
-    Key? key,
-    this.onNavigate,
-  }) : super(key: key);
+  const HomeScreenContent({super.key, this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +25,7 @@ class HomeScreenContent extends StatelessWidget {
             child: Column(
               children: [
                 _buildHeader(context, hPadding),
-                
+
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.all(hPadding),
@@ -87,9 +84,7 @@ class HomeScreenContent extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const SearchScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const SearchScreen()),
               );
             },
             icon: Icon(
@@ -130,9 +125,7 @@ class HomeScreenContent extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const SearchScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const SearchScreen()),
         );
       },
       child: Container(
@@ -143,10 +136,7 @@ class HomeScreenContent extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.15),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
         ),
         child: Row(
           children: [
@@ -265,9 +255,7 @@ class HomeScreenContent extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const SearchScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const SearchScreen()),
                 );
               },
               child: Text(
@@ -280,9 +268,9 @@ class HomeScreenContent extends StatelessWidget {
             ),
           ],
         ),
-        
+
         SizedBox(height: isTablet ? 20.0 : 16.0),
-        
+
         SizedBox(
           height: cardHeight,
           child: ListView(
@@ -301,7 +289,8 @@ class HomeScreenContent extends StatelessWidget {
                         artist: 'Christopher Nolan',
                         year: '2010',
                         genre: 'Science-fiction',
-                        description: 'Un voleur qui s\'infiltre dans les rêves des autres pour voler leurs secrets.',
+                        description:
+                            'Un voleur qui s\'infiltre dans les rêves des autres pour voler leurs secrets.',
                       ),
                     ),
                   );
@@ -321,7 +310,8 @@ class HomeScreenContent extends StatelessWidget {
                         artist: 'The Weeknd',
                         year: '2019',
                         genre: 'Synth-pop',
-                        description: 'Chanson populaire de The Weeknd sortie en 2019.',
+                        description:
+                            'Chanson populaire de The Weeknd sortie en 2019.',
                       ),
                     ),
                   );
@@ -341,7 +331,8 @@ class HomeScreenContent extends StatelessWidget {
                         artist: 'Vincent Van Gogh',
                         year: '1889',
                         genre: 'Post-impressionnisme',
-                        description: 'Tableau célèbre de Van Gogh représentant un ciel nocturne tourbillonnant.',
+                        description:
+                            'Tableau célèbre de Van Gogh représentant un ciel nocturne tourbillonnant.',
                       ),
                     ),
                   );

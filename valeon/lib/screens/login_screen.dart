@@ -8,7 +8,7 @@ import 'signup_screen.dart';
 import 'main_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -58,15 +58,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildIllustration(illustrationSize, illustrationIconSize),
-                      
+                      _buildIllustration(
+                        illustrationSize,
+                        illustrationIconSize,
+                      ),
+
                       SizedBox(height: isTablet ? 52.0 : 40.0),
-                      
+
                       Container(
                         padding: EdgeInsets.all(isTablet ? 36.0 : 24.0),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.95),
-                          borderRadius: BorderRadius.circular(isTablet ? 32.0 : 24.0),
+                          borderRadius: BorderRadius.circular(
+                            isTablet ? 32.0 : 24.0,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
@@ -85,25 +90,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: AppColors.textDark,
                               ),
                             ),
-                            
+
                             SizedBox(height: isTablet ? 32.0 : 24.0),
-                            
+
                             CustomTextField(
                               hintText: 'Email',
                               prefixIcon: Icons.email_outlined,
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                             ),
-                            
+
                             SizedBox(height: isTablet ? 20.0 : 16.0),
-                            
+
                             CustomTextField(
                               hintText: 'Mot de passe',
                               prefixIcon: Icons.lock_outline,
                               obscureText: true,
                               controller: _passwordController,
                             ),
-                            
+
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
@@ -117,22 +122,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-                            
+
                             const SizedBox(height: 8),
-                            
+
                             CustomButton(
                               text: 'Se Connecter',
                               onPressed: _login,
                               isLoading: _isLoading,
                             ),
-                            
+
                             SizedBox(height: isTablet ? 32.0 : 24.0),
-                            
+
                             Row(
                               children: [
                                 const Expanded(child: Divider()),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
                                   child: Text(
                                     'Ou continuez avec',
                                     style: TextStyle(
@@ -144,9 +151,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const Expanded(child: Divider()),
                               ],
                             ),
-                            
+
                             SizedBox(height: isTablet ? 32.0 : 24.0),
-                            
+
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -169,9 +176,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ],
                             ),
-                            
+
                             SizedBox(height: isTablet ? 32.0 : 24.0),
-                            
+
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -187,7 +194,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => const SignupScreen(),
+                                        builder: (context) =>
+                                            const SignupScreen(),
                                       ),
                                     );
                                   },
@@ -223,16 +231,9 @@ class _LoginScreenState extends State<LoginScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 2,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
       ),
-      child: Icon(
-        Icons.phone_iphone,
-        size: iconSize,
-        color: Colors.white,
-      ),
+      child: Icon(Icons.phone_iphone, size: iconSize, color: Colors.white),
     );
   }
 }

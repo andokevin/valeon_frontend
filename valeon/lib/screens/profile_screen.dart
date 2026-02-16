@@ -5,7 +5,7 @@ import 'settings_screen.dart';
 import 'favorites_screen.dart';
 
 class ProfileScreenContent extends StatelessWidget {
-  const ProfileScreenContent({Key? key}) : super(key: key);
+  const ProfileScreenContent({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -75,9 +75,7 @@ class ProfileScreenContent extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
             icon: Icon(
@@ -106,10 +104,7 @@ class ProfileScreenContent extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.primaryBlue,
-                border: Border.all(
-                  color: Colors.white,
-                  width: 3,
-                ),
+                border: Border.all(color: Colors.white, width: 3),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primaryBlue.withOpacity(0.4),
@@ -176,9 +171,7 @@ class ProfileScreenContent extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppSizes.radiusCard),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -193,7 +186,12 @@ class ProfileScreenContent extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String value, String label, bool isTablet) {
+  Widget _buildStatItem(
+    BuildContext context,
+    String value,
+    String label,
+    bool isTablet,
+  ) {
     return Column(
       children: [
         Text(
@@ -229,9 +227,7 @@ class ProfileScreenContent extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Text(
         'Passionné de musique et de cinéma 🎬🎵',
@@ -284,11 +280,23 @@ class ProfileScreenContent extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _buildTrendingCard(context, 'Sipder Vær', 'Die Indie-Reeves djüet', cardHeight, isTablet),
+              child: _buildTrendingCard(
+                context,
+                'Sipder Vær',
+                'Die Indie-Reeves djüet',
+                cardHeight,
+                isTablet,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildTrendingCard(context, 'Space Tunk', '', cardHeight, isTablet),
+              child: _buildTrendingCard(
+                context,
+                'Space Tunk',
+                '',
+                cardHeight,
+                isTablet,
+              ),
             ),
           ],
         ),
@@ -296,15 +304,19 @@ class ProfileScreenContent extends StatelessWidget {
     );
   }
 
-  Widget _buildTrendingCard(BuildContext context, String title, String subtitle, double cardHeight, bool isTablet) {
+  Widget _buildTrendingCard(
+    BuildContext context,
+    String title,
+    String subtitle,
+    double cardHeight,
+    bool isTablet,
+  ) {
     return Container(
       height: cardHeight,
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

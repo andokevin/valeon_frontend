@@ -5,7 +5,7 @@ import '../widgets/space_background.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -20,35 +20,35 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    
+
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
       ),
     );
-    
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
         curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
       ),
     );
-    
+
     _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
         curve: const Interval(0.0, 0.5, curve: Curves.easeOutBack),
       ),
     );
-    
+
     _controller.forward();
-    
+
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -57,8 +57,8 @@ class _SplashScreenState extends State<SplashScreen>
                 const LoginScreen(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+                  return FadeTransition(opacity: animation, child: child);
+                },
             transitionDuration: const Duration(milliseconds: 500),
           ),
         );
@@ -91,7 +91,7 @@ class _SplashScreenState extends State<SplashScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Spacer(),
-                  
+
                   AnimatedBuilder(
                     animation: _controller,
                     builder: (context, child) {
@@ -111,7 +111,9 @@ class _SplashScreenState extends State<SplashScreen>
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.primaryBlue.withOpacity(0.5),
+                                      color: AppColors.primaryBlue.withOpacity(
+                                        0.5,
+                                      ),
                                       blurRadius: 30,
                                       spreadRadius: 5,
                                     ),
@@ -123,9 +125,9 @@ class _SplashScreenState extends State<SplashScreen>
                                   color: Colors.white,
                                 ),
                               ),
-                              
+
                               SizedBox(height: isTablet ? 32.0 : 24.0),
-                              
+
                               Text(
                                 AppStrings.appName,
                                 style: AppTextStyles.titleLarge.copyWith(
@@ -133,9 +135,9 @@ class _SplashScreenState extends State<SplashScreen>
                                   letterSpacing: 2,
                                 ),
                               ),
-                              
+
                               const SizedBox(height: 8),
-                              
+
                               Text(
                                 AppStrings.tagline,
                                 style: AppTextStyles.subtitle.copyWith(
@@ -149,13 +151,15 @@ class _SplashScreenState extends State<SplashScreen>
                       );
                     },
                   ),
-                  
+
                   const Spacer(),
-                  
+
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Padding(
-                      padding: EdgeInsets.all(ResponsiveHelper.paddingScreen(context)),
+                      padding: EdgeInsets.all(
+                        ResponsiveHelper.paddingScreen(context),
+                      ),
                       child: Column(
                         children: [
                           Text(
@@ -176,9 +180,9 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: const CircularProgressIndicator(
@@ -188,7 +192,7 @@ class _SplashScreenState extends State<SplashScreen>
                       strokeWidth: 3,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 80),
                 ],
               ),

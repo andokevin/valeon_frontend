@@ -5,7 +5,7 @@ import 'screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Configuration de la barre de statut
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -14,7 +14,7 @@ void main() {
       statusBarBrightness: Brightness.dark,
     ),
   );
-  
+
   // Portrait pour mobile, portrait + landscape pour tablette
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -27,7 +27,7 @@ void main() {
 }
 
 class ValeonApp extends StatelessWidget {
-  const ValeonApp({Key? key}) : super(key: key);
+  const ValeonApp({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -4,7 +4,7 @@ import '../widgets/space_background.dart';
 import 'result_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -30,7 +30,8 @@ class _SearchScreenState extends State<SearchScreen> {
       'year': '2020',
       'genre': 'Indie Pop',
       'type': 'music',
-      'description': 'Chanson populaire du groupe Glass Animals sortie en 2020.',
+      'description':
+          'Chanson populaire du groupe Glass Animals sortie en 2020.',
     },
     {
       'title': 'Sunflower',
@@ -128,19 +129,18 @@ class _SearchScreenState extends State<SearchScreen> {
         _filteredResults = [];
       } else {
         _filteredResults = _allResults
-            .where((item) =>
-                item['title']
-                    .toString()
-                    .toLowerCase()
-                    .contains(query.toLowerCase()) ||
-                item['artist']
-                    .toString()
-                    .toLowerCase()
-                    .contains(query.toLowerCase()) ||
-                item['genre']
-                    .toString()
-                    .toLowerCase()
-                    .contains(query.toLowerCase()))
+            .where(
+              (item) =>
+                  item['title'].toString().toLowerCase().contains(
+                    query.toLowerCase(),
+                  ) ||
+                  item['artist'].toString().toLowerCase().contains(
+                    query.toLowerCase(),
+                  ) ||
+                  item['genre'].toString().toLowerCase().contains(
+                    query.toLowerCase(),
+                  ),
+            )
             .toList();
       }
     });
@@ -288,7 +288,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
           ..._trendingSuggestions.map((suggestion) {
             return _buildSuggestionItem(context, suggestion, isTablet);
-          }).toList(),
+          }),
 
           const SizedBox(height: 32),
 
@@ -355,7 +355,11 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildSuggestionItem(BuildContext context, Map<String, dynamic> suggestion, bool isTablet) {
+  Widget _buildSuggestionItem(
+    BuildContext context,
+    Map<String, dynamic> suggestion,
+    bool isTablet,
+  ) {
     IconData icon;
     switch (suggestion['type']) {
       case 'music':
@@ -385,9 +389,7 @@ class _SearchScreenState extends State<SearchScreen> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: Row(
           children: [
@@ -442,18 +444,12 @@ class _SearchScreenState extends State<SearchScreen> {
         decoration: BoxDecoration(
           color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: color.withOpacity(0.4),
-          ),
+          border: Border.all(color: color.withOpacity(0.4)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: color,
-              size: isTablet ? 34.0 : 28.0,
-            ),
+            Icon(icon, color: color, size: isTablet ? 34.0 : 28.0),
             const SizedBox(width: 10),
             Text(
               label,
@@ -516,7 +512,11 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildResultItem(BuildContext context, Map<String, dynamic> item, bool isTablet) {
+  Widget _buildResultItem(
+    BuildContext context,
+    Map<String, dynamic> item,
+    bool isTablet,
+  ) {
     IconData icon;
     Color color;
 
@@ -561,9 +561,7 @@ class _SearchScreenState extends State<SearchScreen> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: Row(
           children: [
@@ -573,15 +571,9 @@ class _SearchScreenState extends State<SearchScreen> {
               decoration: BoxDecoration(
                 color: color.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: color.withOpacity(0.4),
-                ),
+                border: Border.all(color: color.withOpacity(0.4)),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: thumbIconSize,
-              ),
+              child: Icon(icon, color: color, size: thumbIconSize),
             ),
             const SizedBox(width: 14),
             Expanded(

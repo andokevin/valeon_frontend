@@ -1,0 +1,9 @@
+<resources>
+    <!-- Autres chaînes de caractères de votre app -->
+    <string name="app_name">VotreApp</string>
+
+    <!-- Identifiants Facebook -->
+    <string name="facebook_app_id">1409022630714902</string>
+    <string name="fb_login_protocol_scheme">fb1409022630714902</string>
+    <string name="facebook_client_token">94033aba0fafbea26aa3f48f77903356</string>
+</resources>

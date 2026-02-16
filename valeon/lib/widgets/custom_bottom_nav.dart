@@ -4,12 +4,12 @@ import '../config/constants.dart';
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
-  
+
   const CustomBottomNav({
-    Key? key,
+    super.key,
     required this.currentIndex,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +59,7 @@ class CustomBottomNav extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildNavItem({
     required BuildContext context,
     required int index,
@@ -68,10 +68,12 @@ class CustomBottomNav extends StatelessWidget {
     bool isCenter = false,
   }) {
     final isSelected = currentIndex == index;
-    final centerButtonSize = ResponsiveHelper.bottomNavCenterButtonSize(context);
+    final centerButtonSize = ResponsiveHelper.bottomNavCenterButtonSize(
+      context,
+    );
     final iconSize = ResponsiveHelper.bottomNavIconSize(context);
     final isTablet = ResponsiveHelper.isTablet(context);
-    
+
     return Expanded(
       child: GestureDetector(
         onTap: () => onTap(index),

@@ -3,7 +3,7 @@ import '../config/constants.dart';
 import '../widgets/space_background.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -54,7 +54,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             title: 'Notifications',
                             subtitle: 'Recevoir des alertes et mises à jour',
                             value: _notifications,
-                            onChanged: (val) => setState(() => _notifications = val),
+                            onChanged: (val) =>
+                                setState(() => _notifications = val),
                           ),
                           const SizedBox(height: 12),
                           _buildSwitchItem(
@@ -74,7 +75,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             title: 'Mode Hors-ligne',
                             subtitle: 'Accéder aux données sans internet',
                             value: _offlineMode,
-                            onChanged: (val) => setState(() => _offlineMode = val),
+                            onChanged: (val) =>
+                                setState(() => _offlineMode = val),
                           ),
                           const SizedBox(height: 12),
                           _buildSwitchItem(
@@ -97,8 +99,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             iconColor: AppColors.primaryBlue,
                             title: 'Langue',
                             value: _language,
-                            options: ['Français', 'English', 'Español', 'Deutsch'],
-                            onChanged: (val) => setState(() => _language = val!),
+                            options: [
+                              'Français',
+                              'English',
+                              'Español',
+                              'Deutsch',
+                            ],
+                            onChanged: (val) =>
+                                setState(() => _language = val!),
                           ),
                           const SizedBox(height: 12),
                           _buildSelectItem(
@@ -248,7 +256,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: AppColors.primaryBlue,
               border: Border.all(color: Colors.white, width: 2),
             ),
-            child: Icon(Icons.person, color: Colors.white, size: avatarIconSize),
+            child: Icon(
+              Icons.person,
+              color: Colors.white,
+              size: avatarIconSize,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -345,7 +357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.primaryBlue,
+            activeThumbColor: AppColors.primaryBlue,
             activeTrackColor: AppColors.primaryBlue.withOpacity(0.4),
             inactiveThumbColor: Colors.grey,
             inactiveTrackColor: Colors.grey.withOpacity(0.4),
@@ -612,9 +624,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         decoration: BoxDecoration(
           color: Colors.red.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: Colors.red.withOpacity(0.3),
-          ),
+          border: Border.all(color: Colors.red.withOpacity(0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

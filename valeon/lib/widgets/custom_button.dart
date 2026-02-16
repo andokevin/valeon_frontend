@@ -10,9 +10,9 @@ class CustomButton extends StatelessWidget {
   final double? height;
   final IconData? icon;
   final bool isLoading;
-  
+
   const CustomButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.backgroundColor,
@@ -21,7 +21,7 @@ class CustomButton extends StatelessWidget {
     this.height,
     this.icon,
     this.isLoading = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -61,9 +61,7 @@ class CustomButton extends StatelessWidget {
                   ],
                   Text(
                     text,
-                    style: AppTextStyles.button.copyWith(
-                      fontSize: fontSize,
-                    ),
+                    style: AppTextStyles.button.copyWith(fontSize: fontSize),
                   ),
                 ],
               ),

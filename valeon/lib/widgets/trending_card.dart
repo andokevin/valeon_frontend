@@ -6,14 +6,14 @@ class TrendingCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-  
+
   const TrendingCard({
-    Key? key,
+    super.key,
     required this.imageUrl,
     required this.title,
     required this.subtitle,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +59,7 @@ class TrendingCard extends StatelessWidget {
                     : _placeholderImage(isTablet),
               ),
             ),
-            
+
             // Texte
             Expanded(
               child: Padding(
@@ -97,7 +97,7 @@ class TrendingCard extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _placeholderImage(bool isTablet) {
     return Container(
       color: Colors.grey[300],

@@ -6,7 +6,7 @@ import '../widgets/custom_text_field.dart';
 import 'main_navigation.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({Key? key}) : super(key: key);
+  const SignupScreen({super.key});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -60,15 +60,20 @@ class _SignupScreenState extends State<SignupScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildIllustration(illustrationSize, illustrationIconSize),
-                      
+                      _buildIllustration(
+                        illustrationSize,
+                        illustrationIconSize,
+                      ),
+
                       SizedBox(height: isTablet ? 52.0 : 40.0),
-                      
+
                       Container(
                         padding: EdgeInsets.all(isTablet ? 36.0 : 24.0),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.95),
-                          borderRadius: BorderRadius.circular(isTablet ? 32.0 : 24.0),
+                          borderRadius: BorderRadius.circular(
+                            isTablet ? 32.0 : 24.0,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
@@ -87,54 +92,56 @@ class _SignupScreenState extends State<SignupScreen> {
                                 color: AppColors.textDark,
                               ),
                             ),
-                            
+
                             SizedBox(height: isTablet ? 32.0 : 24.0),
-                            
+
                             CustomTextField(
                               hintText: 'Nom Complet',
                               prefixIcon: Icons.person_outline,
                               controller: _nameController,
                             ),
-                            
+
                             SizedBox(height: isTablet ? 20.0 : 16.0),
-                            
+
                             CustomTextField(
                               hintText: 'Email',
                               prefixIcon: Icons.email_outlined,
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                             ),
-                            
+
                             SizedBox(height: isTablet ? 20.0 : 16.0),
-                            
+
                             CustomTextField(
                               hintText: 'Mot de passe',
                               prefixIcon: Icons.lock_outline,
                               obscureText: true,
                               controller: _passwordController,
                             ),
-                            
+
                             SizedBox(height: isTablet ? 20.0 : 16.0),
-                            
+
                             CustomTextField(
                               hintText: 'Confirmer le mot de passe',
                               prefixIcon: Icons.lock_outline,
                               obscureText: true,
                               controller: _confirmPasswordController,
                             ),
-                            
+
                             SizedBox(height: isTablet ? 32.0 : 24.0),
-                            
+
                             CustomButton(
                               text: "S'inscrire",
                               onPressed: _signup,
                               isLoading: _isLoading,
                             ),
-                            
+
                             SizedBox(height: isTablet ? 20.0 : 16.0),
-                            
+
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               child: RichText(
                                 textAlign: TextAlign.center,
                                 text: TextSpan(
@@ -144,7 +151,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                   children: const [
                                     TextSpan(
-                                      text: 'En vous inscrivant, vous acceptez ',
+                                      text:
+                                          'En vous inscrivant, vous acceptez ',
                                     ),
                                     TextSpan(
                                       text: "nos Conditions d'Utilisation",
@@ -166,9 +174,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                 ),
                               ),
                             ),
-                            
+
                             SizedBox(height: isTablet ? 32.0 : 24.0),
-                            
+
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -215,16 +223,9 @@ class _SignupScreenState extends State<SignupScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 2,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
       ),
-      child: Icon(
-        Icons.rocket_launch,
-        size: iconSize,
-        color: Colors.white,
-      ),
+      child: Icon(Icons.rocket_launch, size: iconSize, color: Colors.white),
     );
   }
 }
