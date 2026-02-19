@@ -1,8 +1,13 @@
+// lib/screens/result_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../config/constants.dart';
 import '../widgets/platform_button.dart';
 import '../widgets/social_button.dart';
 import '../widgets/custom_button.dart';
+import '../providers/auth_provider.dart';
+import '../providers/library_provider.dart';
+import '../models/content_model.dart';
 
 class ResultScreen extends StatelessWidget {
   final String title;
@@ -11,21 +16,28 @@ class ResultScreen extends StatelessWidget {
   final String genre;
   final String description;
   final String imageUrl;
+  final String? contentId;
+  final Map<String, dynamic>? externalLinks;
 
   const ResultScreen({
     super.key,
-    this.title = 'Blinding Lights',
-    this.artist = 'The Weeknd',
-    this.year = '2019',
-    this.genre = 'Synth-pop',
-    this.description =
-        'Chanson populaire du groupe Glass Animals sortie en 2020, connue pour sa mélodie accrocheuse et son atmosphère nostalgique.',
-    this.imageUrl = 'placeholder',
+    required this.title,
+    required this.artist,
+    this.year = '',
+    this.genre = '',
+    this.description = '',
+    this.imageUrl = '',
+    this.contentId,
+    this.externalLinks,
   });
 
   @override
   Widget build(BuildContext context) {
     final isTablet = ResponsiveHelper.isTablet(context);
+    final auth = Provider.of<AuthProvider>(context);
+    final library = Provider.of<LibraryProvider>(context);
+
+    final isFavorite = contentId != null && library.isFavorite(contentId!);
 
     return WillPopScope(
       onWillPop: () async {
@@ -41,8 +53,8 @@ class ResultScreen extends StatelessWidget {
 
               Expanded(
                 child: isTablet
-                    ? _buildTabletLayout(context)
-                    : _buildPhoneLayout(context),
+                    ? _buildTabletLayout(context, isFavorite, auth, library)
+                    : _buildPhoneLayout(context, isFavorite, auth, library),
               ),
             ],
           ),
@@ -92,7 +104,7 @@ class ResultScreen extends StatelessWidget {
           IconButton(
             onPressed: () {},
             icon: Icon(
-              Icons.search,
+              Icons.share,
               color: AppColors.textDark,
               size: isTablet ? 28.0 : 24.0,
             ),
@@ -102,8 +114,12 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
-  /// Layout téléphone : colonne unique
-  Widget _buildPhoneLayout(BuildContext context) {
+  Widget _buildPhoneLayout(
+    BuildContext context,
+    bool isFavorite,
+    AuthProvider auth,
+    LibraryProvider library,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSizes.paddingScreen),
       child: Column(
@@ -115,37 +131,29 @@ class ResultScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildDescription(false),
           const SizedBox(height: 24),
-          _buildStreamingSection(false),
+          if (externalLinks != null) _buildStreamingSection(false),
           const SizedBox(height: 24),
           _buildShareSection(false),
           const SizedBox(height: 24),
-          CustomButton(
-            text: 'Sauvegarder',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('✅ Sauvegardé dans vos favoris !'),
-                  backgroundColor: AppColors.primaryBlue,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
-            icon: Icons.bookmark_border,
-          ),
+          if (auth.isAuthenticated)
+            CustomButton(
+              text: isFavorite ? 'Retirer des favoris' : 'Sauvegarder',
+              onPressed: () => _toggleFavorite(context, isFavorite, library),
+              icon: isFavorite ? Icons.favorite : Icons.bookmark_border,
+              backgroundColor: isFavorite ? Colors.red : null,
+            ),
           const SizedBox(height: 32),
-          _buildSimilarSection(context, false),
-          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  /// Layout tablette : 2 colonnes côte à côte
-  Widget _buildTabletLayout(BuildContext context) {
+  Widget _buildTabletLayout(
+    BuildContext context,
+    bool isFavorite,
+    AuthProvider auth,
+    LibraryProvider library,
+  ) {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 900),
@@ -154,7 +162,7 @@ class ResultScreen extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Colonne gauche : cover + infos + sauvegarde
+              // Colonne gauche
               Expanded(
                 flex: 5,
                 child: Column(
@@ -166,25 +174,18 @@ class ResultScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     _buildDescription(true),
                     const SizedBox(height: 24),
-                    CustomButton(
-                      text: 'Sauvegarder',
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text(
-                              '✅ Sauvegardé dans vos favoris !',
-                            ),
-                            backgroundColor: AppColors.primaryBlue,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      icon: Icons.bookmark_border,
-                    ),
+                    if (auth.isAuthenticated)
+                      CustomButton(
+                        text: isFavorite
+                            ? 'Retirer des favoris'
+                            : 'Sauvegarder',
+                        onPressed: () =>
+                            _toggleFavorite(context, isFavorite, library),
+                        icon: isFavorite
+                            ? Icons.favorite
+                            : Icons.bookmark_border,
+                        backgroundColor: isFavorite ? Colors.red : null,
+                      ),
                     const SizedBox(height: 24),
                     _buildShareSection(true),
                   ],
@@ -193,15 +194,13 @@ class ResultScreen extends StatelessWidget {
 
               const SizedBox(width: 32),
 
-              // Colonne droite : streaming + similaires
+              // Colonne droite
               Expanded(
                 flex: 5,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildStreamingSection(true),
-                    const SizedBox(height: 32),
-                    _buildSimilarSection(context, true),
+                    if (externalLinks != null) _buildStreamingSection(true),
                   ],
                 ),
               ),
@@ -214,6 +213,7 @@ class ResultScreen extends StatelessWidget {
 
   Widget _buildCoverImage(BuildContext context, bool isTablet) {
     final coverHeight = ResponsiveHelper.resultCoverHeight(context);
+
     return Center(
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppSizes.radiusCard),
@@ -221,7 +221,7 @@ class ResultScreen extends StatelessWidget {
           width: double.infinity,
           height: coverHeight,
           color: Colors.grey[300],
-          child: imageUrl.startsWith('http')
+          child: imageUrl.isNotEmpty
               ? Image.network(
                   imageUrl,
                   fit: BoxFit.cover,
@@ -260,26 +260,30 @@ class ResultScreen extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          '$artist - ($year)',
+          '$artist${year.isNotEmpty ? ' - $year' : ''}',
           style: TextStyle(
             fontSize: isTablet ? 20.0 : 16.0,
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          genre,
-          style: TextStyle(
-            fontSize: isTablet ? 17.0 : 14.0,
-            color: Colors.grey[500],
+        if (genre.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            genre,
+            style: TextStyle(
+              fontSize: isTablet ? 17.0 : 14.0,
+              color: Colors.grey[500],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
 
   Widget _buildDescription(bool isTablet) {
+    if (description.isEmpty) return const SizedBox();
+
     return Text(
       description,
       style: TextStyle(
@@ -291,6 +295,8 @@ class ResultScreen extends StatelessWidget {
   }
 
   Widget _buildStreamingSection(bool isTablet) {
+    if (externalLinks == null) return const SizedBox();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -303,19 +309,43 @@ class ResultScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        PlatformButton(platform: 'YouTube', onTap: () {}),
-        const SizedBox(height: 10),
-        PlatformButton(platform: 'Spotify', onTap: () {}),
-        const SizedBox(height: 10),
-        PlatformButton(platform: 'Apple Music', onTap: () {}),
-        const SizedBox(height: 10),
-        PlatformButton(platform: 'Deezer', onTap: () {}),
+
+        if (externalLinks!['youtube'] != null)
+          PlatformButton(
+            platform: 'YouTube',
+            onTap: () => _openLink(externalLinks!['youtube']),
+          ),
+
+        if (externalLinks!['spotify'] != null) ...[
+          const SizedBox(height: 10),
+          PlatformButton(
+            platform: 'Spotify',
+            onTap: () => _openLink(externalLinks!['spotify']),
+          ),
+        ],
+
+        if (externalLinks!['apple_music'] != null) ...[
+          const SizedBox(height: 10),
+          PlatformButton(
+            platform: 'Apple Music',
+            onTap: () => _openLink(externalLinks!['apple_music']),
+          ),
+        ],
+
+        if (externalLinks!['deezer'] != null) ...[
+          const SizedBox(height: 10),
+          PlatformButton(
+            platform: 'Deezer',
+            onTap: () => _openLink(externalLinks!['deezer']),
+          ),
+        ],
       ],
     );
   }
 
   Widget _buildShareSection(bool isTablet) {
     final socialSize = isTablet ? 64.0 : 52.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -330,142 +360,93 @@ class ResultScreen extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            SocialButton(platform: 'Facebook', onTap: () {}, size: socialSize),
+            SocialButton(
+              platform: 'Facebook',
+              onTap: () => _shareContent('facebook'),
+              size: socialSize,
+            ),
             const SizedBox(width: 12),
-            SocialButton(platform: 'Twitter', onTap: () {}, size: socialSize),
+            SocialButton(
+              platform: 'Twitter',
+              onTap: () => _shareContent('twitter'),
+              size: socialSize,
+            ),
             const SizedBox(width: 12),
-            SocialButton(platform: 'TikTok', onTap: () {}, size: socialSize),
-            const SizedBox(width: 12),
-            SocialButton(platform: 'Instagram', onTap: () {}, size: socialSize),
+            SocialButton(
+              platform: 'Instagram',
+              onTap: () => _shareContent('instagram'),
+              size: socialSize,
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildSimilarSection(BuildContext context, bool isTablet) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Chansons similaires',
-          style: TextStyle(
-            fontSize: isTablet ? 22.0 : 18.0,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildSimilarItem(
-          context,
-          'Sunflower',
-          'Post Malone & Swae Lee',
-          '2018',
-          isTablet,
-        ),
-        Divider(height: isTablet ? 32.0 : 24.0),
-        _buildSimilarItem(
-          context,
-          'Blinding Lights',
-          'The Weeknd',
-          '2019',
-          isTablet,
-        ),
-      ],
+  Future<void> _toggleFavorite(
+    BuildContext context,
+    bool isFavorite,
+    LibraryProvider library,
+  ) async {
+    if (contentId == null) return;
+
+    final content = ContentModel(
+      id: contentId!,
+      title: title,
+      artist: artist,
+      year: year,
+      genre: genre,
+      description: description,
+      imageUrl: imageUrl,
+      type: _determineContentType(),
+      scannedAt: DateTime.now(),
     );
+
+    if (isFavorite) {
+      await library.removeFromFavorites(
+        contentId!,
+        context.read<AuthProvider>().user!,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Retiré des favoris'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else {
+      await library.addToFavorites(content, context.read<AuthProvider>().user!);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ajouté aux favoris'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
-  Widget _buildSimilarItem(
-    BuildContext context,
-    String itemTitle,
-    String itemArtist,
-    String time,
-    bool isTablet,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ResultScreen(
-              title: itemTitle,
-              artist: itemArtist,
-              year: time,
-              genre: genre,
-              description: description,
-            ),
-          ),
-        );
-      },
-      child: Row(
-        children: [
-          Container(
-            width: isTablet ? 76.0 : 60.0,
-            height: isTablet ? 76.0 : 60.0,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.music_note,
-              color: Colors.grey,
-              size: isTablet ? 40.0 : 30.0,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  itemTitle,
-                  style: TextStyle(
-                    fontSize: isTablet ? 18.0 : 16.0,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  itemArtist,
-                  style: TextStyle(
-                    fontSize: isTablet ? 16.0 : 14.0,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  time,
-                  style: TextStyle(
-                    fontSize: isTablet ? 14.0 : 12.0,
-                    color: Colors.grey[500],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('$itemTitle ajouté aux favoris'),
-                  backgroundColor: AppColors.primaryBlue,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
-            icon: Icon(
-              Icons.add_circle_outline,
-              color: AppColors.primaryBlue,
-              size: isTablet ? 34.0 : 28.0,
-            ),
-          ),
-        ],
-      ),
-    );
+  ContentType _determineContentType() {
+    // Logique pour déterminer le type
+    if (genre.toLowerCase().contains('film') ||
+        genre.toLowerCase().contains('movie')) {
+      return ContentType.film;
+    } else if (genre.toLowerCase().contains('image') ||
+        genre.toLowerCase().contains('photo')) {
+      return ContentType.image;
+    } else {
+      return ContentType.music;
+    }
+  }
+
+  void _openLink(String? url) {
+    if (url == null) return;
+    // TODO: Ouvrir le lien
+  }
+
+  void _shareContent(String platform) {
+    // TODO: Implémenter le partage
   }
 }

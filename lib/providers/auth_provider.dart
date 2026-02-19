@@ -1,33 +1,84 @@
+// lib/providers/auth_provider.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import '../core/database/database_service.dart';
+import '../core/network/connectivity_service.dart';
+import '../models/user_model.dart';
+import '../utils/secure_storage.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = authService;
-  User? _user;
+  final DatabaseService _db = DatabaseService();
+  final ConnectivityService _connectivity = ConnectivityService();
+  final SecureStorage _secureStorage = SecureStorage();
+
+  User? _firebaseUser;
+  UserModel? _user;
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isOfflineMode = false;
 
   AuthProvider() {
-    print('🟣 AuthProvider initialisé');
     _initAuthListener();
+    _connectivity.addListener(_onConnectivityChanged);
   }
 
   void _initAuthListener() {
-    _authService.user.listen((User? user) {
-      print(
-        '🟢 Auth state changed - utilisateur: ${user?.email ?? 'Déconnecté'}',
-      );
-      _user = user;
-      notifyListeners();
+    _authService.user.listen((User? firebaseUser) {
+      _firebaseUser = firebaseUser;
+      _loadUserData();
     });
   }
 
+  void _onConnectivityChanged() {
+    if (_connectivity.isOnline && _user != null) {
+      _syncUserData();
+    }
+    notifyListeners();
+  }
+
+  Future<void> _loadUserData() async {
+    if (_firebaseUser != null) {
+      // Charger depuis SQLite d'abord
+      final localUser = await _db.getUser(_firebaseUser!.uid);
+
+      if (localUser != null) {
+        _user = localUser;
+        _isOfflineMode = !_connectivity.isOnline;
+      } else {
+        // Sinon créer depuis Firebase
+        _user = UserModel.fromFirebase(_firebaseUser!);
+        await _db.upsertUser(_user!);
+      }
+
+      // Synchroniser si connecté
+      if (_connectivity.isOnline) {
+        _syncUserData();
+      }
+    } else {
+      _user = null;
+    }
+    notifyListeners();
+  }
+
+  Future<void> _syncUserData() async {
+    try {
+      // TODO: Appeler API backend pour synchroniser
+      await _db.upsertUser(_user!);
+      await _secureStorage.saveUser(_user!);
+    } catch (e) {
+      print('❌ Erreur sync user: $e');
+    }
+  }
+
   // Getters
-  User? get user => _user;
+  User? get firebaseUser => _firebaseUser;
+  UserModel? get user => _user;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
+  bool get isOfflineMode => _isOfflineMode;
 
   // ===== INSCRIPTION =====
   Future<bool> signUp({
@@ -39,27 +90,34 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      print('🟡 Début inscription: $email');
-      final user = await _authService.signUpWithEmail(email, password, name);
+      final firebaseUser = await _authService.signUpWithEmail(
+        email,
+        password,
+        name,
+      );
 
-      if (user != null) {
-        print('🟢 Inscription réussie pour: ${user.email}');
-        _user = user; // Mise à jour manuelle
-        notifyListeners();
+      if (firebaseUser != null) {
+        _firebaseUser = firebaseUser;
+        _user = UserModel.fromFirebase(firebaseUser);
+
+        // Sauvegarder localement
+        await _db.upsertUser(_user!);
+        await _secureStorage.saveUser(_user!);
+
+        // Synchroniser si connecté
+        if (_connectivity.isOnline) {
+          await _syncUserData();
+        }
+
         _setLoading(false);
         return true;
-      } else {
-        print('🔴 Échec inscription');
-        _setError('Erreur lors de l\'inscription');
-        _setLoading(false);
-        return false;
       }
     } catch (e) {
-      print('🔴 Erreur inscription: $e');
       _setError(e.toString());
-      _setLoading(false);
-      return false;
     }
+
+    _setLoading(false);
+    return false;
   }
 
   // ===== CONNEXION EMAIL =====
@@ -68,136 +126,109 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      print('🟡 Début connexion email: $email');
-      final user = await _authService.signInWithEmail(email, password);
+      // Essayer d'abord en local (offline)
+      final localUser = await _db.getUserByEmail(email);
 
-      if (user != null) {
-        print('🟢 Connexion email réussie pour: ${user.email}');
-        _user = user; // Mise à jour manuelle
-        notifyListeners();
-        _setLoading(false);
-        return true;
+      if (localUser != null && !_connectivity.isOnline) {
+        // Mode offline - vérifier avec le hash stocké
+        final isValid = await _secureStorage.verifyPassword(email, password);
+
+        if (isValid) {
+          _user = localUser;
+          _isOfflineMode = true;
+          _setLoading(false);
+          return true;
+        }
+      }
+
+      // Mode online - appel Firebase
+      if (_connectivity.isOnline) {
+        final firebaseUser = await _authService.signInWithEmail(
+          email,
+          password,
+        );
+
+        if (firebaseUser != null) {
+          _firebaseUser = firebaseUser;
+          _user = UserModel.fromFirebase(firebaseUser);
+
+          await _db.upsertUser(_user!);
+          await _secureStorage.saveUser(_user!, password: password);
+
+          _setLoading(false);
+          return true;
+        }
       } else {
-        print('🔴 Échec connexion email');
-        _setError('Email ou mot de passe incorrect');
-        _setLoading(false);
-        return false;
+        _setError('Mode hors ligne - Identifiants non trouvés localement');
       }
     } catch (e) {
-      print('🔴 Erreur connexion email: $e');
       _setError(e.toString());
-      _setLoading(false);
-      return false;
     }
+
+    _setLoading(false);
+    return false;
   }
 
   // ===== CONNEXION GOOGLE =====
   Future<bool> signInWithGoogle() async {
+    if (!_connectivity.isOnline) {
+      _setError('Connexion internet requise pour Google Sign-In');
+      return false;
+    }
+
     _setLoading(true);
     _clearError();
 
     try {
-      print('🟡 Début connexion Google');
-      final user = await _authService.signInWithGoogle();
+      final firebaseUser = await _authService.signInWithGoogle();
 
-      if (user != null) {
-        print('🟢 Connexion Google réussie pour: ${user.email}');
-        print('🟢 Mise à jour manuelle de _user');
-        _user = user; // MISE À JOUR MANUELLE CRITIQUE
-        notifyListeners();
-        print('🟢 _user après mise à jour: ${_user?.email}');
-        print('🟢 isAuthenticated: $isAuthenticated');
+      if (firebaseUser != null) {
+        _firebaseUser = firebaseUser;
+        _user = UserModel.fromFirebase(firebaseUser);
+
+        await _db.upsertUser(_user!);
+        await _secureStorage.saveUser(_user!);
+
         _setLoading(false);
         return true;
-      } else {
-        print('🟡 Connexion Google annulée');
-        _setLoading(false);
-        return false;
       }
     } catch (e) {
-      print('🔴 Erreur Google: $e');
       _setError(e.toString());
-      _setLoading(false);
-      return false;
     }
+
+    _setLoading(false);
+    return false;
   }
 
   // ===== CONNEXION FACEBOOK =====
   Future<bool> signInWithFacebook() async {
+    if (!_connectivity.isOnline) {
+      _setError('Connexion internet requise pour Facebook Sign-In');
+      return false;
+    }
+
     _setLoading(true);
     _clearError();
 
     try {
-      print('🟡 Début connexion Facebook');
-      final user = await _authService.signInWithFacebook();
+      final firebaseUser = await _authService.signInWithFacebook();
 
-      if (user != null) {
-        print('🟢 Connexion Facebook réussie pour: ${user.email}');
-        print('🟢 Mise à jour manuelle de _user');
-        _user = user; // MISE À JOUR MANUELLE CRITIQUE
-        notifyListeners();
-        print('🟢 _user après mise à jour: ${_user?.email}');
-        print('🟢 isAuthenticated: $isAuthenticated');
+      if (firebaseUser != null) {
+        _firebaseUser = firebaseUser;
+        _user = UserModel.fromFirebase(firebaseUser);
+
+        await _db.upsertUser(_user!);
+        await _secureStorage.saveUser(_user!);
+
         _setLoading(false);
         return true;
-      } else {
-        print('🟡 Connexion Facebook annulée');
-        _setLoading(false);
-        return false;
       }
     } catch (e) {
-      print('🔴 Erreur Facebook: $e');
       _setError(e.toString());
-      _setLoading(false);
-      return false;
     }
-  }
 
-  // ===== CONNEXION APPLE =====
-  Future<bool> signInWithApple() async {
-    _setLoading(true);
-    _clearError();
-
-    try {
-      print('🟡 Début connexion Apple');
-      final user = await _authService.signInWithApple();
-
-      if (user != null) {
-        print('🟢 Connexion Apple réussie pour: ${user.email}');
-        _user = user; // Mise à jour manuelle
-        notifyListeners();
-        _setLoading(false);
-        return true;
-      } else {
-        print('🟡 Connexion Apple annulée');
-        _setLoading(false);
-        return false;
-      }
-    } catch (e) {
-      print('🔴 Erreur Apple: $e');
-      _setError(e.toString());
-      _setLoading(false);
-      return false;
-    }
-  }
-
-  // ===== RÉINITIALISATION MOT DE PASSE =====
-  Future<bool> resetPassword(String email) async {
-    _setLoading(true);
-    _clearError();
-
-    try {
-      print('🟡 Envoi reset password à: $email');
-      await _authService.resetPassword(email);
-      print('🟢 Email de réinitialisation envoyé');
-      _setLoading(false);
-      return true;
-    } catch (e) {
-      print('🔴 Erreur reset password: $e');
-      _setError(e.toString());
-      _setLoading(false);
-      return false;
-    }
+    _setLoading(false);
+    return false;
   }
 
   // ===== DÉCONNEXION =====
@@ -205,13 +236,12 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      print('🟡 Début déconnexion');
       await _authService.signOut();
-      _user = null; // Mise à jour manuelle
+      _firebaseUser = null;
+      _user = null;
+      _isOfflineMode = false;
       notifyListeners();
-      print('🟢 Déconnexion réussie');
     } catch (e) {
-      print('🔴 Erreur déconnexion: $e');
       _setError(e.toString());
     }
 
@@ -234,38 +264,9 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  String? getUserName() {
-    return _user?.displayName ??
-        _user?.email?.split('@').first ??
-        'Utilisateur';
-  }
-
-  String? getUserEmail() {
-    return _user?.email;
-  }
-
-  String? getPhotoUrl() {
-    return _user?.photoURL;
-  }
-
-  // Rafraîchir manuellement l'utilisateur
-  Future<void> refreshUser() async {
-    try {
-      await _user?.reload();
-      _user = _authService.currentUser;
-      notifyListeners();
-      print('🟢 Utilisateur rafraîchi: ${_user?.email}');
-    } catch (e) {
-      print('🔴 Erreur refresh: $e');
-    }
-  }
-
-  // Vérifier l'état actuel (utile pour debug)
-  void checkAuthState() {
-    print('📊 État actuel:');
-    print('  - isAuthenticated: $isAuthenticated');
-    print('  - user: ${_user?.email ?? 'null'}');
-    print('  - isLoading: $_isLoading');
-    print('  - errorMessage: $_errorMessage');
+  @override
+  void dispose() {
+    _connectivity.removeListener(_onConnectivityChanged);
+    super.dispose();
   }
 }
