@@ -5,8 +5,9 @@ import '../database/database_service.dart';
 import '../network/api_client.dart';
 import '../network/connectivity_service.dart';
 import '../../models/user_model.dart';
-import '../../models/scan_model.dart';
-import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
+import '../../utils/secure_storage.dart';
 
 class SyncManager extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
@@ -45,7 +46,7 @@ class SyncManager extends ChangeNotifier {
     await syncAll();
   }
 
-  Future<void> syncAll({UserModel? user}) async {
+  Future<void> syncAll({User? user}) async {
     if (_isSyncing) return;
 
     _isSyncing = true;
@@ -118,7 +119,7 @@ class SyncManager extends ChangeNotifier {
     // TODO: Implémenter sync chats
   }
 
-  Future<void> _syncUser(UserModel user) async {
+  Future<void> _syncUser(User user) async {
     try {
       await _api.post('/users/sync', data: user.toMap());
     } catch (e) {

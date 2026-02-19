@@ -64,20 +64,20 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _signInWithApple() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.signInWithApple();
+  // Future<void> _signInWithApple() async {
+  //   final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  //   final success = await authProvider.signInWithApple();
 
-    if (!success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Erreur Apple'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
+  //   if (!success && mounted) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text(authProvider.errorMessage ?? 'Erreur Apple'),
+  //         backgroundColor: Colors.red,
+  //         behavior: SnackBarBehavior.floating,
+  //       ),
+  //     );
+  //   }
+  // }
 
   Future<void> _signInWithFacebook() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -249,11 +249,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                       SocialButton(
                                         platform: 'Facebook',
                                         onTap: _signInWithFacebook,
-                                        size: isTablet ? 64.0 : 52.0,
-                                      ),
-                                      SocialButton(
-                                        platform: 'Apple',
-                                        onTap: _signInWithApple,
                                         size: isTablet ? 64.0 : 52.0,
                                       ),
                                     ],

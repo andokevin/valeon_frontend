@@ -24,7 +24,7 @@ class ScanProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   Map<String, dynamic>? get lastResult => _lastResult;
 
-  Future<void> loadUserScans(UserModel user) async {
+  Future<void> loadUserScans(User user) async {
     _isLoading = true;
     notifyListeners();
 
@@ -38,10 +38,7 @@ class ScanProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Map<String, dynamic>?> scanAudio(
-    String filePath,
-    UserModel user,
-  ) async {
+  Future<Map<String, dynamic>?> scanAudio(String filePath, User user) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -102,7 +99,7 @@ class ScanProvider extends ChangeNotifier {
 
   Future<Map<String, dynamic>?> _sendScanToApi(
     String filePath,
-    UserModel user,
+    User user,
   ) async {
     try {
       var request = http.MultipartRequest(
@@ -130,7 +127,7 @@ class ScanProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> syncUnsyncedScans(UserModel user) async {
+  Future<void> syncUnsyncedScans(User user) async {
     if (!_connectivity.isOnline) return;
 
     final unsynced = await _db.getUnsyncedScans();

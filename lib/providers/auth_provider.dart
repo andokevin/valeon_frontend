@@ -1,11 +1,11 @@
 // lib/providers/auth_provider.dart
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import '../services/auth_service.dart';
 import '../core/database/database_service.dart';
 import '../core/network/connectivity_service.dart';
-import '../models/user_model.dart';
 import '../utils/secure_storage.dart';
+import '../models/user_model.dart' as user_local;
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = authService;
@@ -13,11 +13,23 @@ class AuthProvider extends ChangeNotifier {
   final ConnectivityService _connectivity = ConnectivityService();
   final SecureStorage _secureStorage = SecureStorage();
 
-  User? _firebaseUser;
-  UserModel? _user;
+  fb.User? _firebaseUser;
+  user_local.User? _user;
   bool _isLoading = false;
   String? _errorMessage;
   bool _isOfflineMode = false;
+
+  // Getters
+  String get getUserName =>
+      _user?.fullName ?? _user?.displayName ?? 'Utilisateur';
+  String get getUserEmail => _user?.email ?? 'email inconnu';
+  String? get getUserProfilePicture => _user?.photoUrl;
+  fb.User? get firebaseUser => _firebaseUser;
+  user_local.User? get user => _user;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  bool get isAuthenticated => _user != null;
+  bool get isOfflineMode => _isOfflineMode;
 
   AuthProvider() {
     _initAuthListener();
@@ -25,7 +37,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void _initAuthListener() {
-    _authService.user.listen((User? firebaseUser) {
+    _authService.user.listen((fb.User? firebaseUser) {
       _firebaseUser = firebaseUser;
       _loadUserData();
     });
@@ -48,7 +60,7 @@ class AuthProvider extends ChangeNotifier {
         _isOfflineMode = !_connectivity.isOnline;
       } else {
         // Sinon créer depuis Firebase
-        _user = UserModel.fromFirebase(_firebaseUser!);
+        _user = user_local.User.fromFirebase(_firebaseUser!);
         await _db.upsertUser(_user!);
       }
 
@@ -72,14 +84,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Getters
-  User? get firebaseUser => _firebaseUser;
-  UserModel? get user => _user;
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-  bool get isAuthenticated => _user != null;
-  bool get isOfflineMode => _isOfflineMode;
-
   // ===== INSCRIPTION =====
   Future<bool> signUp({
     required String name,
@@ -98,7 +102,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (firebaseUser != null) {
         _firebaseUser = firebaseUser;
-        _user = UserModel.fromFirebase(firebaseUser);
+        _user = user_local.User.fromFirebase(firebaseUser);
 
         // Sauvegarder localement
         await _db.upsertUser(_user!);
@@ -150,7 +154,7 @@ class AuthProvider extends ChangeNotifier {
 
         if (firebaseUser != null) {
           _firebaseUser = firebaseUser;
-          _user = UserModel.fromFirebase(firebaseUser);
+          _user = user_local.User.fromFirebase(firebaseUser);
 
           await _db.upsertUser(_user!);
           await _secureStorage.saveUser(_user!, password: password);
@@ -184,7 +188,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (firebaseUser != null) {
         _firebaseUser = firebaseUser;
-        _user = UserModel.fromFirebase(firebaseUser);
+        _user = user_local.User.fromFirebase(firebaseUser);
 
         await _db.upsertUser(_user!);
         await _secureStorage.saveUser(_user!);
@@ -215,7 +219,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (firebaseUser != null) {
         _firebaseUser = firebaseUser;
-        _user = UserModel.fromFirebase(firebaseUser);
+        _user = user_local.User.fromFirebase(firebaseUser);
 
         await _db.upsertUser(_user!);
         await _secureStorage.saveUser(_user!);
@@ -229,6 +233,31 @@ class AuthProvider extends ChangeNotifier {
 
     _setLoading(false);
     return false;
+  }
+
+  // ===== RÉINITIALISATION MOT DE PASSE =====
+  Future<bool> resetPassword(String email) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      if (!_connectivity.isOnline) {
+        _setError(
+          'Connexion internet requise pour réinitialiser le mot de passe',
+        );
+        _setLoading(false);
+        return false;
+      }
+
+      await _authService.resetPassword(email);
+
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      return false;
+    }
   }
 
   // ===== DÉCONNEXION =====

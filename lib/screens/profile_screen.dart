@@ -1,3 +1,4 @@
+// lib/screens/profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/constants.dart';
@@ -100,10 +101,11 @@ class ProfileScreenContent extends StatelessWidget {
     final avatarSize = isTablet ? 130.0 : 100.0;
     final avatarIconSize = isTablet ? 66.0 : 50.0;
 
-    final userName = authProvider.getUserName() ?? 'Alex Martin';
-    final userEmail = authProvider.getUserEmail();
-    final photoUrl = authProvider.getPhotoUrl();
-    final isEmailVerified = authProvider.user?.emailVerified ?? false;
+    // ✅ Utilisation correcte des getters
+    final userName = authProvider.getUserName;
+    final userEmail = authProvider.getUserEmail;
+    final photoUrl = authProvider.getUserProfilePicture;
+    final isEmailVerified = authProvider.firebaseUser?.emailVerified ?? false;
 
     return Column(
       children: [
@@ -124,7 +126,7 @@ class ProfileScreenContent extends StatelessWidget {
                   ),
                 ],
               ),
-              child: photoUrl != null
+              child: (photoUrl != null && photoUrl.isNotEmpty)
                   ? ClipOval(
                       child: Image.network(
                         photoUrl,
@@ -186,32 +188,42 @@ class ProfileScreenContent extends StatelessWidget {
           ],
         ),
 
-        if (userEmail != null) ...[
-          const SizedBox(height: 4),
-          Text(
-            userEmail,
-            style: AppTextStyles.bodySmall.copyWith(
-              fontSize: isTablet ? 16.0 : 14.0,
-            ),
+        const SizedBox(height: 4),
+        Text(
+          userEmail,
+          style: AppTextStyles.bodySmall.copyWith(
+            fontSize: isTablet ? 16.0 : 14.0,
           ),
-        ],
+        ),
 
-        if (!isEmailVerified && authProvider.user != null)
+        if (!isEmailVerified && authProvider.firebaseUser != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Builder(
               builder: (BuildContext context) {
                 return TextButton(
                   onPressed: () async {
-                    await authProvider.user?.sendEmailVerification();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Email de vérification envoyé'),
-                          backgroundColor: Colors.green,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
+                    try {
+                      await authProvider.firebaseUser?.sendEmailVerification();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Email de vérification envoyé'),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Erreur: $e'),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
                     }
                   },
                   child: Text(

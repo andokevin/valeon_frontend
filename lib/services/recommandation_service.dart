@@ -7,7 +7,7 @@ class RecommendationService {
   final ApiClient _api = ApiClient();
 
   Future<List<Map<String, dynamic>>> getRecommendations(
-    UserModel user, {
+    User user, {
     int limit = 20,
     String? contentType,
   }) async {
@@ -73,7 +73,7 @@ class RecommendationService {
 
   Future<Map<String, dynamic>> getChatRecommendation(
     String query,
-    UserModel user,
+    User user,
   ) async {
     try {
       final response = await _api.post(

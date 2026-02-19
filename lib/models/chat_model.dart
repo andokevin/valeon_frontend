@@ -51,14 +51,27 @@ class ChatMessage {
       'synced': synced ? 1 : 0,
     };
   }
+
+  // ✅ Méthode pour créer une copie avec synced modifié
+  ChatMessage copyWith({bool? synced}) {
+    return ChatMessage(
+      id: id,
+      role: role,
+      content: content,
+      timestamp: timestamp,
+      synced: synced ?? this.synced,
+    );
+  }
 }
 
 class ChatConversation {
   final String id;
   final String userId;
   final List<ChatMessage> messages;
-  final DateTime lastMessageAt;
-  final bool synced;
+
+  // ✅ Rendu non-final pour pouvoir le modifier
+  DateTime lastMessageAt;
+  bool synced;
 
   ChatConversation({
     required this.id,
@@ -89,4 +102,25 @@ class ChatConversation {
       'synced': synced ? 1 : 0,
     };
   }
+
+  // ✅ Méthode utilitaire pour ajouter un message
+  void addMessage(ChatMessage message) {
+    messages.add(message);
+    lastMessageAt = DateTime.now();
+    synced = false;
+  }
+
+  // ✅ Méthode pour créer une copie avec synced modifié
+  ChatConversation copyWith({bool? synced}) {
+    return ChatConversation(
+      id: id,
+      userId: userId,
+      messages: messages.map((m) => m).toList(),
+      lastMessageAt: lastMessageAt,
+      synced: synced ?? this.synced,
+    );
+  }
+
+  // ✅ Obtenir le dernier message
+  ChatMessage? get lastMessage => messages.isNotEmpty ? messages.last : null;
 }

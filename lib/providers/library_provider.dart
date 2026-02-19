@@ -25,7 +25,7 @@ class LibraryProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  Future<void> loadUserLibrary(UserModel user) async {
+  Future<void> loadUserLibrary(User user) async {
     _isLoading = true;
     notifyListeners();
 
@@ -67,7 +67,7 @@ class LibraryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addToFavorites(ContentModel content, UserModel user) async {
+  Future<void> addToFavorites(ContentModel content, User user) async {
     try {
       await _db.insertFavorite(user.id, content.toJson());
       _favorites.add(content);
@@ -85,7 +85,7 @@ class LibraryProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> removeFromFavorites(String contentId, UserModel user) async {
+  Future<void> removeFromFavorites(String contentId, User user) async {
     try {
       _favorites.removeWhere((c) => c.id == contentId);
 

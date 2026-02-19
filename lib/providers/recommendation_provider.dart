@@ -25,7 +25,7 @@ class RecommendationProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  Future<void> loadRecommendations(UserModel user) async {
+  Future<void> loadRecommendations(User user) async {
     _isLoading = true;
     notifyListeners();
 
@@ -49,7 +49,7 @@ class RecommendationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _loadPersonalized(UserModel user) async {
+  Future<void> _loadPersonalized(User user) async {
     try {
       final response = await _api.get(
         '/recommendations/personalized',
@@ -80,7 +80,7 @@ class RecommendationProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadForYou(UserModel user) async {
+  Future<void> _loadForYou(User user) async {
     try {
       final response = await _api.get('/recommendations/for-you');
 
@@ -94,7 +94,7 @@ class RecommendationProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadOfflineRecommendations(UserModel user) async {
+  Future<void> _loadOfflineRecommendations(User user) async {
     // En mode offline, utiliser les favoris et l'historique
     final scans = await _db.getUserScans(user.id);
     final recentTypes = <String, int>{};

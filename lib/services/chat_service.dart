@@ -113,4 +113,111 @@ class ChatService {
     chat.lastMessageAt = DateTime.now();
     await _db.saveChat(chat);
   }
+
+  // ===== NOUVELLES MÉTHODES POUR LA SYNCHRONISATION =====
+
+  /// Récupère les messages distants depuis le backend
+  Future<List<ChatMessage>> getRemoteMessages(String userId) async {
+    try {
+      if (!_connectivity.isOnline) return [];
+
+      final response = await _api.get('/chat/history/$userId');
+
+      if (response != null && response is List) {
+        return response.map((item) => ChatMessage.fromMap(item)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('❌ Erreur récupération messages distants: $e');
+      return [];
+    }
+  }
+
+  /// Supprime un message distant sur le backend
+  Future<bool> deleteRemoteMessage(String userId, String messageId) async {
+    try {
+      if (!_connectivity.isOnline) return false;
+
+      await _api.delete('/chat/message/$messageId');
+      return true;
+    } catch (e) {
+      print('❌ Erreur suppression message distant: $e');
+      return false;
+    }
+  }
+
+  /// Synchronise un message avec le backend
+  Future<ChatMessage?> syncMessage(String userId, ChatMessage message) async {
+    try {
+      if (!_connectivity.isOnline) return null;
+
+      final response = await _api.post(
+        '/chat/messages',
+        data: {'userId': userId, 'message': message.toMap()},
+      );
+
+      if (response != null) {
+        // Marquer le message comme synchronisé localement
+        final updatedMessage = ChatMessage(
+          id: message.id,
+          role: message.role,
+          content: message.content,
+          timestamp: message.timestamp,
+          synced: true,
+        );
+
+        // Mettre à jour dans la base locale
+        final chat = await getOrCreateChat(userId);
+        final index = chat.messages.indexWhere((m) => m.id == message.id);
+        if (index != -1) {
+          chat.messages[index] = updatedMessage;
+          await _db.saveChat(chat);
+        }
+
+        return updatedMessage;
+      }
+      return null;
+    } catch (e) {
+      print('❌ Erreur sync message: $e');
+      return null;
+    }
+  }
+
+  /// Récupère la dernière conversation depuis le backend
+  Future<ChatConversation?> getRemoteConversation(String userId) async {
+    try {
+      if (!_connectivity.isOnline) return null;
+
+      final response = await _api.get('/chat/conversation/$userId');
+
+      if (response != null) {
+        return ChatConversation(
+          id: response['id'] ?? userId,
+          userId: userId,
+          messages: (response['messages'] as List)
+              .map((m) => ChatMessage.fromMap(m))
+              .toList(),
+          lastMessageAt: DateTime.parse(response['lastMessageAt']),
+          synced: true,
+        );
+      }
+      return null;
+    } catch (e) {
+      print('❌ Erreur récupération conversation distante: $e');
+      return null;
+    }
+  }
+
+  /// Marque tous les messages comme lus sur le backend
+  Future<bool> markMessagesAsRead(String userId) async {
+    try {
+      if (!_connectivity.isOnline) return false;
+
+      await _api.post('/chat/mark-read/$userId');
+      return true;
+    } catch (e) {
+      print('❌ Erreur marquage messages comme lus: $e');
+      return false;
+    }
+  }
 }

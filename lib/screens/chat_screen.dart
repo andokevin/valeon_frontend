@@ -5,6 +5,7 @@ import '../providers/chat_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/space_background.dart';
 import '../config/constants.dart';
+import '../models/chat_model.dart'; // ✅ IMPORT AJOUTÉ pour ChatMessage
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -25,6 +26,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final chatProvider = Provider.of<ChatProvider>(context, listen: false);
 
       if (authProvider.user != null) {
+        // ✅ Correction: loadChat au lieu de loadConversation
         chatProvider.loadChat(authProvider.user!);
       }
     });

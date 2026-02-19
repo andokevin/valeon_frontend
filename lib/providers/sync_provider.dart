@@ -10,7 +10,7 @@ class SyncProvider extends ChangeNotifier {
   int get syncProgress => _syncManager.syncProgress;
   String? get lastSyncError => _syncManager.lastSyncError;
 
-  Future<void> syncAll({UserModel? user}) async {
+  Future<void> syncAll({User? user}) async {
     await _syncManager.syncAll(user: user);
     notifyListeners();
   }

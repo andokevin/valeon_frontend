@@ -9,6 +9,7 @@ import '../widgets/error_view.dart';
 import '../providers/auth_provider.dart';
 import '../providers/recommendation_provider.dart';
 import '../providers/connectivity_provider.dart';
+import '../models/content_model.dart'; // ✅ IMPORT AJOUTÉ
 import 'result_screen.dart';
 import 'search_screen.dart';
 import 'scan_screen.dart';
@@ -174,7 +175,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
           // Message de bienvenue
           _buildWelcomeMessage(
             context,
-            auth.user?.displayName ?? 'Utilisateur',
+            auth.getUserName, // ✅ Utilisation du getter
             isTablet,
           ),
 
@@ -411,6 +412,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
   }
 
+  // ✅ CORRECTION : List<ContentModel> au lieu de List<ContentType>
   Widget _buildForYouList(
     BuildContext context,
     List<ContentModel> items,
@@ -421,7 +423,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final item = items[index];
           return _buildContentCard(context, item, isTablet);
@@ -430,6 +432,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
   }
 
+  // ✅ CORRECTION : List<ContentModel> au lieu de List<ContentType>
   Widget _buildTrendingList(
     BuildContext context,
     List<ContentModel> items,
@@ -440,7 +443,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final item = items[index];
           return _buildTrendingCard(context, item, isTablet);
@@ -449,6 +452,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
   }
 
+  // ✅ CORRECTION : List<ContentModel> au lieu de List<ContentType>
   Widget _buildPersonalizedList(
     BuildContext context,
     List<ContentModel> items,
@@ -464,6 +468,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
   }
 
+  // ✅ CORRECTION : paramètre ContentModel
   Widget _buildContentCard(
     BuildContext context,
     ContentModel item,
@@ -547,6 +552,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
   }
 
+  // ✅ CORRECTION : paramètre ContentModel
   Widget _buildTrendingCard(
     BuildContext context,
     ContentModel item,
@@ -639,6 +645,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
   }
 
+  // ✅ CORRECTION : paramètre ContentModel
   Widget _buildPersonalizedItem(
     BuildContext context,
     ContentModel item,

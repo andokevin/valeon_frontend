@@ -1,3 +1,4 @@
+// lib/screens/scan_screen.dart
 import 'package:flutter/material.dart';
 import '../config/constants.dart';
 import '../widgets/space_background.dart';
@@ -16,6 +17,38 @@ class _ScanScreenContentState extends State<ScanScreenContent>
   bool _isScanning = false;
   ScanMode _currentMode = ScanMode.audio;
   int _timer = 0;
+
+  // ✅ Données de résultat simulées pour chaque mode
+  final Map<ScanMode, Map<String, String>> _sampleResults = {
+    ScanMode.audio: {
+      'title': 'Blinding Lights',
+      'artist': 'The Weeknd',
+      'year': '2019',
+      'genre': 'Synth-pop',
+      'description': 'Chanson populaire de The Weeknd sortie en 2019.',
+    },
+    ScanMode.image: {
+      'title': 'La Nuit Étoilée',
+      'artist': 'Vincent Van Gogh',
+      'year': '1889',
+      'genre': 'Post-impressionnisme',
+      'description': 'Tableau célèbre de Van Gogh.',
+    },
+    ScanMode.video: {
+      'title': 'Inception',
+      'artist': 'Christopher Nolan',
+      'year': '2010',
+      'genre': 'Science-fiction',
+      'description': 'Un voleur qui s\'infiltre dans les rêves.',
+    },
+    ScanMode.camera: {
+      'title': 'Tour Eiffel',
+      'artist': 'Paris, France',
+      'year': '2024',
+      'genre': 'Lieu célèbre',
+      'description': 'La Tour Eiffel, symbole de Paris.',
+    },
+  };
 
   @override
   void initState() {
@@ -80,6 +113,10 @@ class _ScanScreenContentState extends State<ScanScreenContent>
   }
 
   void _showResultBottomSheet() {
+    // ✅ Récupérer les données correspondant au mode actuel
+    final result =
+        _sampleResults[_currentMode] ?? _sampleResults[ScanMode.audio]!;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -141,7 +178,7 @@ class _ScanScreenContentState extends State<ScanScreenContent>
                   const SizedBox(height: 8),
 
                   Text(
-                    'Blinding Lights - The Weeknd',
+                    '${result['title']} - ${result['artist']}',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                       fontSize: isTablet ? 16.0 : 14.0,
@@ -158,7 +195,13 @@ class _ScanScreenContentState extends State<ScanScreenContent>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const ResultScreen(),
+                            builder: (context) => ResultScreen(
+                              title: result['title']!,
+                              artist: result['artist']!,
+                              year: result['year']!,
+                              genre: result['genre']!,
+                              description: result['description']!,
+                            ),
                           ),
                         );
                       },

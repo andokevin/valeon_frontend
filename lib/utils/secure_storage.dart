@@ -32,7 +32,7 @@ class SecureStorage {
   }
 
   // ===== UTILISATEUR =====
-  Future<void> saveUser(UserModel user, {String? password}) async {
+  Future<void> saveUser(User user, {String? password}) async {
     await _storage.write(key: _userKey, value: jsonEncode(user.toMap()));
 
     if (password != null) {
@@ -42,13 +42,13 @@ class SecureStorage {
     }
   }
 
-  Future<UserModel?> getUser() async {
+  Future<User?> getUser() async {
     final data = await _storage.read(key: _userKey);
     if (data == null) return null;
 
     try {
       final map = jsonDecode(data);
-      return UserModel.fromMap(map);
+      return User.fromMap(map);
     } catch (e) {
       return null;
     }

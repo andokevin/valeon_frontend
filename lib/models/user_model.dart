@@ -1,4 +1,6 @@
 // lib/models/user_model.dart
+import 'package:firebase_auth/firebase_auth.dart' as fb;
+
 class User {
   final String id;
   final String email;
@@ -20,7 +22,7 @@ class User {
     required this.createdAt,
   });
 
-  factory User.fromFirebase(User firebaseUser) {
+  factory User.fromFirebase(fb.User firebaseUser) {
     return User(
       id: firebaseUser.uid,
       email: firebaseUser.email ?? '',

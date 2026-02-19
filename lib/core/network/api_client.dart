@@ -1,9 +1,8 @@
 // lib/core/network/api_client.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
-import '../config/app_config.dart';
-import '../utils/secure_storage.dart';
+import '../../config/app_config.dart';
+import '../../utils/secure_storage.dart';
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
