@@ -8,10 +8,12 @@ plugins {
 
 android {
     namespace = "com.app.valeon"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // ✅ Activation du desugaring pour flutter_local_notifications
+        coreLibraryDesugaringEnabled true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -21,12 +23,9 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.app.valeon"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 21  // ⚠️ Important : minimum 21 pour le desugaring
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -34,7 +33,6 @@ android {
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -43,16 +41,20 @@ android {
 flutter {
     source = "../.."
 }
+
 dependencies {
+    // ✅ Dépendance OBLIGATOIRE pour le desugaring
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
 
-    // TODO: Add the dependencies for Firebase products you want to use
+    // Firebase products
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth") // Si tu utilises Firebase Auth
+    // implementation("com.google.firebase:firebase-firestore") // Si besoin
 
-    // Ajoutez cette ligne pour Facebook SDK
-    implementation("com.facebook.android:facebook-android-sdk:latest.release")
-    
-    // Ou utilisez une version spécifique comme celle-ci (recommandé):
-    // implementation("com.facebook.android:facebook-android-sdk:17.0.0")
+    // Facebook SDK - version stable recommandée
+    implementation("com.facebook.android:facebook-android-sdk:17.0.0")
+    // ⚠️ Évite "latest.release" en production, fixe une version
 }
