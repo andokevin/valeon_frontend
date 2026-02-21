@@ -1,67 +1,83 @@
-// lib/models/user_model.dart
-import 'package:firebase_auth/firebase_auth.dart' as fb;
-
-class User {
-  final String id;
-  final String email;
-  final String? fullName;
-  final String? photoUrl;
-  final String? subscription;
+class UserModel {
+  final int userId;
+  final String userFullName;
+  final String userEmail;
+  final String? userImage;
+  final String subscription;
+  final bool isPremium;
+  final bool isActive;
   final Map<String, dynamic>? preferences;
-  final DateTime? lastSync;
-  final DateTime createdAt;
+  final DateTime? createdAt;
 
-  User({
-    required this.id,
-    required this.email,
-    this.fullName,
-    this.photoUrl,
-    this.subscription = 'Free',
+  const UserModel({
+    required this.userId,
+    required this.userFullName,
+    required this.userEmail,
+    this.userImage,
+    required this.subscription,
+    required this.isPremium,
+    required this.isActive,
     this.preferences,
-    this.lastSync,
-    required this.createdAt,
+    this.createdAt,
   });
 
-  factory User.fromFirebase(fb.User firebaseUser) {
-    return User(
-      id: firebaseUser.uid,
-      email: firebaseUser.email ?? '',
-      fullName: firebaseUser.displayName,
-      photoUrl: firebaseUser.photoURL,
-      createdAt: DateTime.now(),
-    );
+  // ✅ Getter de compatibilité — évite de modifier ChatProvider
+  int get id => userId;
+  String get email => userEmail;
+  // ✅ Getter utiles supplémentaires
+  String get firstName => userFullName.split(' ').first;
+  String get initials {
+    final parts = userFullName.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+    return userFullName.isNotEmpty ? userFullName[0].toUpperCase() : '?';
   }
 
-  factory User.fromMap(Map<String, dynamic> map) {
-    return User(
-      id: map['id'],
-      email: map['email'],
-      fullName: map['fullName'],
-      photoUrl: map['photoUrl'],
-      subscription: map['subscription'] ?? 'Free',
-      preferences: map['preferences'] != null
-          ? Map<String, dynamic>.from(map['preferences'])
-          : null,
-      lastSync: map['lastSync'] != null
-          ? DateTime.parse(map['lastSync'])
-          : null,
-      createdAt: DateTime.parse(map['createdAt']),
-    );
-  }
+  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
+        userId: json['user_id'] ?? 0,
+        userFullName: json['user_full_name'] ?? '',
+        userEmail: json['user_email'] ?? '',
+        userImage: json['user_image'],
+        subscription: json['subscription'] ?? 'Free',
+        isPremium: json['is_premium'] ?? false,
+        isActive: json['is_active'] ?? true,
+        preferences: json['preferences'] is Map
+            ? Map<String, dynamic>.from(json['preferences'])
+            : null,
+        createdAt: json['created_at'] != null
+            ? DateTime.tryParse(json['created_at'])
+            : null,
+      );
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'email': email,
-      'fullName': fullName,
-      'photoUrl': photoUrl,
-      'subscription': subscription,
-      'preferences': preferences,
-      'lastSync': lastSync?.toIso8601String(),
-      'createdAt': createdAt.toIso8601String(),
-    };
-  }
+  Map<String, dynamic> toJson() => {
+        'user_id': userId,
+        'user_full_name': userFullName,
+        'user_email': userEmail,
+        'user_image': userImage,
+        'subscription': subscription,
+        'is_premium': isPremium,
+        'is_active': isActive,
+        'preferences': preferences,
+        'created_at': createdAt?.toIso8601String(),
+      };
 
-  String get displayName => fullName ?? email.split('@').first;
-  bool get isPremium => subscription == 'Premium' || subscription == 'Pro';
+  UserModel copyWith({
+    String? userFullName,
+    String? userImage,
+    String? subscription,
+    bool? isPremium,
+    Map<String, dynamic>? preferences,
+  }) =>
+      UserModel(
+        userId: userId,
+        userFullName: userFullName ?? this.userFullName,
+        userEmail: userEmail,
+        userImage: userImage ?? this.userImage,
+        subscription: subscription ?? this.subscription,
+        isPremium: isPremium ?? this.isPremium,
+        isActive: isActive,
+        preferences: preferences ?? this.preferences,
+        createdAt: createdAt,
+      );
 }

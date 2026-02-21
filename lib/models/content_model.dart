@@ -1,76 +1,137 @@
-enum ContentType { music, film, image }
+import 'dart:convert';
 
 class ContentModel {
-  final String id;
-  final String title;
-  final String artist;
-  final String year;
-  final String genre;
-  final String description;
-  final String imageUrl;
-  final ContentType type;
-  final DateTime scannedAt;
+  final int contentId;
+  final String contentType;
+  final String contentTitle;
+  final String? contentOriginalTitle;
+  final String? contentDescription;
+  final String? contentArtist;
+  final String? contentDirector;
+  final String? contentImage;
+  final String? contentBackdrop;
+  final String? contentReleaseDate;
+  final int? contentDuration;
+  final double? contentRating;
+  final String? contentUrl;
+  final String? spotifyId;
+  final int? tmdbId;
+  final String? youtubeId;
+  final Map<String, dynamic>? metadata;
 
-  ContentModel({
-    required this.id,
-    required this.title,
-    required this.artist,
-    required this.year,
-    required this.genre,
-    required this.description,
-    required this.imageUrl,
-    required this.type,
-    required this.scannedAt,
+  const ContentModel({
+    required this.contentId,
+    required this.contentType,
+    required this.contentTitle,
+    this.contentOriginalTitle,
+    this.contentDescription,
+    this.contentArtist,
+    this.contentDirector,
+    this.contentImage,
+    this.contentBackdrop,
+    this.contentReleaseDate,
+    this.contentDuration,
+    this.contentRating,
+    this.contentUrl,
+    this.spotifyId,
+    this.tmdbId,
+    this.youtubeId,
+    this.metadata,
   });
 
-  // ===== Conversion JSON =====
-  factory ContentModel.fromJson(Map<String, dynamic> json) {
-    return ContentModel(
-      id: json['id'],
-      title: json['title'],
-      artist: json['artist'],
-      year: json['year'],
-      genre: json['genre'],
-      description: json['description'],
-      imageUrl: json['imageUrl'],
-      type: ContentType.values.firstWhere(
-        (e) => e.toString() == 'ContentType.${json['type']}',
-        orElse: () => ContentType.image, // valeur par défaut
-      ),
-      scannedAt: json['scannedAt'] != null
-          ? DateTime.parse(json['scannedAt'])
-          : DateTime.now(),
-    );
-  }
+  factory ContentModel.fromJson(Map<String, dynamic> json) => ContentModel(
+    contentId: json['content_id'] ?? 0,
+    contentType: json['content_type'] ?? 'unknown',
+    contentTitle: json['content_title'] ?? json['title'] ?? '',
+    contentOriginalTitle: json['content_original_title'],
+    contentDescription: json['content_description'] ?? json['description'],
+    contentArtist: json['content_artist'] ?? json['artist'],
+    contentDirector: json['content_director'],
+    contentImage: json['content_image'] ?? json['image'],
+    contentBackdrop: json['content_backdrop'],
+    contentReleaseDate: json['content_release_date'],
+    contentDuration: json['content_duration'],
+    contentRating: (json['content_rating'])?.toDouble(),
+    contentUrl: json['content_url'],
+    spotifyId: json['spotify_id'],
+    tmdbId: json['tmdb_id'],
+    youtubeId: json['youtube_id'],
+    metadata: json['content_metadata'] is Map
+        ? Map<String, dynamic>.from(json['content_metadata'])
+        : null,
+  );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'artist': artist,
-      'year': year,
-      'genre': genre,
-      'description': description,
-      'imageUrl': imageUrl,
-      'type': type.toString().split('.').last,
-      'scannedAt': scannedAt.toIso8601String(),
-    };
-  }
+  factory ContentModel.fromDbMap(Map<String, dynamic> map) => ContentModel(
+    contentId: map['content_id'] ?? 0,
+    contentType: map['content_type'] ?? 'unknown',
+    contentTitle: map['content_title'] ?? '',
+    contentOriginalTitle: map['content_original_title'],
+    contentDescription: map['content_description'],
+    contentArtist: map['content_artist'],
+    contentDirector: map['content_director'],
+    contentImage: map['content_image'],
+    contentBackdrop: map['content_backdrop'],
+    contentReleaseDate: map['content_release_date'],
+    contentDuration: map['content_duration'],
+    contentRating: map['content_rating']?.toDouble(),
+    contentUrl: map['content_url'],
+    spotifyId: map['spotify_id'],
+    tmdbId: map['tmdb_id'],
+    youtubeId: map['youtube_id'],
+    metadata: map['content_metadata'] != null
+        ? jsonDecode(map['content_metadata']) as Map<String, dynamic>
+        : null,
+  );
 
-  // ===== Getter pratique pour afficher "il y a ..." =====
-  String get timeAgo {
-    final now = DateTime.now();
-    final difference = now.difference(scannedAt);
+  Map<String, dynamic> toJson() => {
+    'content_id': contentId,
+    'content_type': contentType,
+    'content_title': contentTitle,
+    'content_original_title': contentOriginalTitle,
+    'content_description': contentDescription,
+    'content_artist': contentArtist,
+    'content_director': contentDirector,
+    'content_image': contentImage,
+    'content_backdrop': contentBackdrop,
+    'content_release_date': contentReleaseDate,
+    'content_duration': contentDuration,
+    'content_rating': contentRating,
+    'content_url': contentUrl,
+    'spotify_id': spotifyId,
+    'tmdb_id': tmdbId,
+    'youtube_id': youtubeId,
+    'content_metadata': metadata,
+  };
 
-    if (difference.inMinutes < 60) {
-      return 'Il y a ${difference.inMinutes} min';
-    } else if (difference.inHours < 24) {
-      return 'Il y a ${difference.inHours} heure${difference.inHours > 1 ? 's' : ''}';
-    } else if (difference.inDays < 7) {
-      return 'Il y a ${difference.inDays} jour${difference.inDays > 1 ? 's' : ''}';
-    } else {
-      final weeks = (difference.inDays / 7).floor();
-      return 'Il y a $weeks semaine${weeks > 1 ? 's' : ''}';
+  Map<String, dynamic> toDbMap() => {
+    'content_id': contentId,
+    'content_type': contentType,
+    'content_title': contentTitle,
+    'content_original_title': contentOriginalTitle,
+    'content_description': contentDescription,
+    'content_artist': contentArtist,
+    'content_director': contentDirector,
+    'content_image': contentImage,
+    'content_backdrop': contentBackdrop,
+    'content_release_date': contentReleaseDate,
+    'content_duration': contentDuration,
+    'content_rating': contentRating,
+    'content_url': contentUrl,
+    'spotify_id': spotifyId,
+    'tmdb_id': tmdbId,
+    'youtube_id': youtubeId,
+    'content_metadata': metadata != null ? jsonEncode(metadata) : null,
+    'content_date': DateTime.now().toIso8601String(),
+  };
+
+  String get typeLabel {
+    switch (contentType) {
+      case 'music': return '🎵 Musique';
+      case 'movie': return '🎬 Film';
+      case 'tv_show': return '📺 Série';
+      case 'album_cover': return '💿 Album';
+      case 'movie_poster': return '🎬 Film';
+      default: return '📁 Contenu';
     }
   }
 }

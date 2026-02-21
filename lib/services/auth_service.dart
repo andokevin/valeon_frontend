@@ -1,299 +1,209 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-
-// Imports conditionnels pour Facebook
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart'
-    if (dart.library.html) 'package:flutter_facebook_auth_web/flutter_facebook_auth_web.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import '../core/constants/app_constants.dart';
+import '../core/errors/app_exception.dart';
+import '../core/network/api_client.dart';
+import '../models/auth_model.dart';
+import '../models/user_model.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _api = ApiClient.instance;
+  final _storage = const FlutterSecureStorage();
+  final _firebaseAuth = FirebaseAuth.instance;
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn.standard();
+  // ✅ serverClientId obligatoire pour récupérer idToken sur Android
+  final _googleSignIn = GoogleSignIn(
+    serverClientId: 'VOTRE_WEB_CLIENT_ID.apps.googleusercontent.com',
+  );
 
-  // Stream de l'utilisateur connecté
-  Stream<User?> get user => _auth.authStateChanges();
+  // ─── EMAIL / PASSWORD ────────────────────────────────────────────────────
 
-  // Utilisateur actuel
-  User? get currentUser => _auth.currentUser;
-
-  // ===== INSCRIPTION EMAIL/MOT DE PASSE =====
-  Future<User?> signUpWithEmail(
-    String email,
-    String password,
-    String name,
-  ) async {
+  Future<AuthTokenModel> register({
+    required String fullName,
+    required String email,
+    required String password,
+  }) async {
     try {
-      UserCredential result = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // Mettre à jour le nom d'affichage
-      await result.user?.updateDisplayName(name);
-      await result.user?.reload();
-
-      // Envoyer l'email de vérification
-      await result.user?.sendEmailVerification();
-
-      return result.user;
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
-    } catch (e) {
-      throw 'Erreur inattendue: $e';
+      final res = await _api.post('/auth/register', data: {
+        'user_full_name': fullName,
+        'user_email': email,
+        'password': password,
+        'accept_terms': true,
+      });
+      final token = AuthTokenModel.fromJson(res.data);
+      await _saveTokens(token);
+      return token;
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
     }
   }
 
-  // ===== CONNEXION EMAIL/MOT DE PASSE =====
-  Future<User?> signInWithEmail(String email, String password) async {
+  Future<AuthTokenModel> login({
+    required String email,
+    required String password,
+  }) async {
     try {
-      UserCredential result = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
+      final res = await _api.dio.post(
+        '/auth/login',
+        data: FormData.fromMap({'username': email, 'password': password}),
+        options: Options(contentType: 'application/x-www-form-urlencoded'),
       );
-      return result.user;
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
-    } catch (e) {
-      throw 'Erreur inattendue: $e';
+      final token = AuthTokenModel.fromJson(res.data);
+      await _saveTokens(token);
+      return token;
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
     }
   }
 
-  // ===== CONNEXION GOOGLE =====
-  Future<User?> signInWithGoogle() async {
+  // ─── GOOGLE SIGN-IN ─────────────────────────────────────────────────────
+
+  Future<AuthTokenModel> loginWithGoogle() async {
     try {
-      print('🟢 Démarrage Google Sign-In');
+      // ✅ Force disconnect pour éviter cache compte précédent
+      await _googleSignIn.signOut();
 
-      // S'assurer qu'aucun utilisateur n'est déjà connecté
-      try {
-        await _googleSignIn.signOut();
-      } catch (e) {
-        // Ignorer
-      }
-
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
+      final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        print('🟡 Google Sign-In annulé');
-        return null;
+        throw const AppException('Connexion Google annulée');
       }
 
-      print('🟢 Utilisateur Google: ${googleUser.email}');
+      final googleAuth = await googleUser.authentication;
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      // ✅ Debug logs pour vérifier les tokens
+      debugPrint('✅ Google accessToken: ${googleAuth.accessToken != null}');
+      debugPrint('✅ Google idToken: ${googleAuth.idToken != null}');
+
+      if (googleAuth.idToken == null) {
+        throw const AppException(
+          'idToken Google null — vérifiez le serverClientId dans Firebase',
+        );
+      }
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      UserCredential result = await _auth.signInWithCredential(credential);
-      print('🟢 Connexion Firebase réussie: ${result.user?.email}');
+      final userCredential =
+          await _firebaseAuth.signInWithCredential(credential);
+      final firebaseToken = await userCredential.user?.getIdToken();
 
-      return result.user;
-    } on FirebaseAuthException catch (e) {
-      print('🔴 FirebaseAuthException Google: ${e.code} - ${e.message}');
-      throw _handleAuthException(e);
-    } catch (e, stack) {
-      print('🔴 Erreur Google: $e');
-      print(stack);
-      throw 'Erreur de connexion Google: $e';
-    }
-  }
+      debugPrint('✅ Firebase token: ${firebaseToken != null}');
 
-  // ===== CONNEXION APPLE =====
-  Future<User?> signInWithApple() async {
-    try {
-      print('🟢 Démarrage Apple Sign-In');
-
-      final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
-
-      print('🟢 Credentials Apple obtenus');
-
-      final oauthCredential = OAuthProvider("apple.com").credential(
-        idToken: credential.identityToken,
-        accessToken: credential.authorizationCode,
-      );
-
-      UserCredential result = await _auth.signInWithCredential(oauthCredential);
-
-      if (credential.givenName != null || credential.familyName != null) {
-        final displayName =
-            '${credential.givenName ?? ''} ${credential.familyName ?? ''}'
-                .trim();
-        await result.user?.updateDisplayName(displayName);
+      if (firebaseToken == null) {
+        throw const AppException('Token Firebase invalide');
       }
 
-      print('🟢 Connexion Apple Firebase réussie');
-      return result.user;
-    } on FirebaseAuthException catch (e) {
-      print('🔴 FirebaseAuthException Apple: ${e.code} - ${e.message}');
-      throw _handleAuthException(e);
-    } catch (e, stack) {
-      print('🔴 Erreur Apple: $e');
-      print(stack);
-      throw 'Erreur de connexion Apple: $e';
+      final res = await _api.post('/auth/social-login', data: {
+        'provider': 'google',
+        'firebase_token': firebaseToken,
+        'user_full_name': googleUser.displayName ?? '',
+        'user_email': googleUser.email ?? '',
+        'user_image': googleUser.photoUrl,
+      });
+
+      debugPrint('✅ Backend response: ${res.statusCode} | ${res.data}');
+
+      final token = AuthTokenModel.fromJson(res.data);
+      await _saveTokens(token);
+      return token;
+    } on AppException {
+      rethrow;
+    } catch (e) {
+      debugPrint('❌ Google Sign-In error: $e');
+      throw AppException('Erreur Google Sign-In: $e');
     }
   }
 
-  // ===== CONNEXION FACEBOOK =====
-  Future<User?> signInWithFacebook() async {
+  // ─── FACEBOOK SIGN-IN ───────────────────────────────────────────────────
+
+  Future<AuthTokenModel> loginWithFacebook() async {
     try {
-      print('🟢 Démarrage Facebook Sign-In');
-
-      final facebookAuth = FacebookAuth.instance;
-
-      // Lancer la connexion avec permissions
-      final LoginResult result = await facebookAuth.login(
+      final result = await FacebookAuth.instance.login(
         permissions: ['email', 'public_profile'],
       );
 
-      print('🟢 Statut Facebook: ${result.status}');
-
-      if (result.status == LoginStatus.success) {
-        final AccessToken accessToken = result.accessToken!;
-        print('🟢 Token Facebook obtenu');
-
-        final OAuthCredential credential = FacebookAuthProvider.credential(
-          accessToken.tokenString,
-        );
-
-        try {
-          UserCredential userCredential = await _auth.signInWithCredential(
-            credential,
-          );
-          print('🟢 Connexion Firebase Facebook réussie');
-          return userCredential.user;
-        } on FirebaseAuthException catch (e) {
-          if (e.code == 'account-exists-with-different-credential') {
-            print('🟡 Email déjà utilisé avec une autre méthode');
-
-            // Récupérer les infos Facebook
-            try {
-              final userData = await facebookAuth.getUserData();
-              final email = userData['email'] as String?;
-
-              if (email != null) {
-                throw 'Un compte existe déjà avec l\'email $email. Veuillez vous connecter avec votre méthode habituelle.';
-              }
-            } catch (_) {}
-
-            throw 'Un compte existe déjà avec cet email. Veuillez vous connecter avec votre méthode habituelle.';
-          }
-          rethrow;
-        }
-      } else if (result.status == LoginStatus.cancelled) {
-        print('🟡 Facebook Sign-In annulé');
-        return null;
-      } else {
-        print('🔴 Échec Facebook: ${result.message}');
-        throw 'Échec de connexion Facebook: ${result.message}';
-      }
-    } on FirebaseAuthException catch (e) {
-      print('🔴 FirebaseAuthException Facebook: ${e.code} - ${e.message}');
-      throw _handleAuthException(e);
-    } catch (e, stack) {
-      print('🔴 Erreur Facebook: $e');
-      print(stack);
-      throw 'Erreur de connexion Facebook: $e';
-    }
-  }
-
-  // ===== DÉCONNEXION =====
-  Future<void> signOut() async {
-    try {
-      print('🟢 Déconnexion en cours...');
-
-      // Déconnexion Google
-      try {
-        await _googleSignIn.signOut();
-      } catch (e) {
-        print('⚠️ Erreur Google SignOut ignorée: $e');
+      if (result.status != LoginStatus.success || result.accessToken == null) {
+        throw const AppException('Connexion Facebook annulée ou refusée');
       }
 
-      // Déconnexion Facebook
-      try {
-        await _facebookSignOut();
-      } catch (e) {
-        print('⚠️ Erreur Facebook SignOut ignorée: $e');
+      final credential = FacebookAuthProvider.credential(
+        result.accessToken!.tokenString,
+      );
+
+      final userCredential =
+          await _firebaseAuth.signInWithCredential(credential);
+      final firebaseToken = await userCredential.user?.getIdToken();
+
+      if (firebaseToken == null) {
+        throw const AppException('Token Firebase invalide');
       }
 
-      // Déconnexion Firebase
-      await _auth.signOut();
-      print('🟢 Déconnexion réussie');
-    } catch (e) {
-      print('🔴 Erreur lors de la déconnexion: $e');
+      final userData = await FacebookAuth.instance.getUserData(
+        fields: 'name,email,picture.width(200)',
+      );
+
+      final res = await _api.post('/auth/social-login', data: {
+        'provider': 'facebook',
+        'firebase_token': firebaseToken,
+        'user_full_name': userData['name'] ?? '',
+        'user_email': userData['email'] ?? userCredential.user?.email ?? '',
+        'user_image': userData['picture']?['data']?['url'],
+      });
+
+      final token = AuthTokenModel.fromJson(res.data);
+      await _saveTokens(token);
+      return token;
+    } on AppException {
       rethrow;
-    }
-  }
-
-  Future<void> _facebookSignOut() async {
-    try {
-      await FacebookAuth.instance.logOut();
     } catch (e) {
-      // Ignorer
+      debugPrint('❌ Facebook Sign-In error: $e');
+      throw AppException('Erreur Facebook Sign-In: $e');
     }
   }
 
-  // ===== RÉINITIALISATION MOT DE PASSE =====
-  Future<void> resetPassword(String email) async {
+  // ─── UTILITAIRES ───────────────────────────────────────────────────────
+
+  Future<UserModel> getProfile() async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+      final res = await _api.get('/auth/me');
+      return UserModel.fromJson(res.data);
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
     }
   }
 
-  // ===== SUPPRIMER COMPTE =====
-  Future<void> deleteAccount() async {
+  Future<void> logout() async {
     try {
-      await _auth.currentUser?.delete();
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
-    }
+      await _api.post('/auth/logout');
+      await _googleSignIn.signOut();
+      await FacebookAuth.instance.logOut();
+      await _firebaseAuth.signOut();
+    } catch (_) {}
+    await _storage.deleteAll();
   }
 
-  // ===== GESTION DES ERREURS =====
-  String _handleAuthException(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'weak-password':
-        return 'Mot de passe trop faible (minimum 6 caractères)';
-      case 'email-already-in-use':
-        return 'Cet email est déjà utilisé';
-      case 'invalid-email':
-        return 'Email invalide';
-      case 'user-not-found':
-        return 'Aucun utilisateur avec cet email';
-      case 'wrong-password':
-        return 'Mot de passe incorrect';
-      case 'user-disabled':
-        return 'Ce compte a été désactivé';
-      case 'too-many-requests':
-        return 'Trop de tentatives. Réessayez plus tard';
-      case 'network-request-failed':
-        return 'Problème de connexion internet';
-      case 'account-exists-with-different-credential':
-        return 'Un compte existe déjà avec le même email. Veuillez utiliser votre méthode de connexion habituelle.';
-      case 'invalid-credential':
-        return 'Identifiants invalides';
-      case 'operation-not-allowed':
-        return 'Cette méthode de connexion n\'est pas activée';
-      case 'invalid-verification-code':
-        return 'Code de vérification invalide';
-      default:
-        if (e.message != null && e.message!.contains('10')) {
-          return 'Erreur de configuration Google Sign-In. Vérifiez Firebase Console.';
-        }
-        return 'Erreur: ${e.message}';
-    }
+  Future<bool> isLoggedIn() async {
+    final token = await _storage.read(key: AppConstants.accessTokenKey);
+    return token != null;
+  }
+
+  Future<String?> getAccessToken() =>
+      _storage.read(key: AppConstants.accessTokenKey);
+
+  Future<void> _saveTokens(AuthTokenModel token) async {
+    await _storage.write(
+      key: AppConstants.accessTokenKey,
+      value: token.accessToken,
+    );
+    await _storage.write(
+      key: AppConstants.refreshTokenKey,
+      value: token.refreshToken,
+    );
   }
 }
-
-// Instance globale
-final authService = AuthService();

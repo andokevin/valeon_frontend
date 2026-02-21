@@ -1,140 +1,62 @@
-// lib/core/network/api_client.dart
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../../config/app_config.dart';
-import '../../utils/secure_storage.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../constants/app_constants.dart';
+import '../utils/logger.dart';
 
 class ApiClient {
-  static final ApiClient _instance = ApiClient._internal();
-  factory ApiClient() => _instance;
-  ApiClient._internal();
+  static ApiClient? _instance;
+  late final Dio _dio;
+  final _storage = const FlutterSecureStorage();
 
-  final SecureStorage _secureStorage = SecureStorage();
-
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await _secureStorage.getToken();
-    return {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
+  ApiClient._() {
+    _dio = Dio(BaseOptions(
+      baseUrl: AppConstants.baseUrl,
+      connectTimeout: const Duration(milliseconds: AppConstants.connectTimeout),
+      receiveTimeout: const Duration(milliseconds: AppConstants.receiveTimeout),
+      headers: {'Content-Type': 'application/json'},
+    ));
+    _dio.interceptors.addAll([
+      _AuthInterceptor(_storage),
+      LogInterceptor(requestBody: false, responseBody: false,
+          logPrint: (o) => AppLogger.info(o.toString())),
+    ]);
   }
 
-  // ===== GESTION DES ERREURS =====
-  dynamic _handleResponse(http.Response response) {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (response.body.isEmpty) return null;
-      return jsonDecode(response.body);
-    } else {
-      throw ApiException(
-        statusCode: response.statusCode,
-        message: _parseErrorMessage(response),
-      );
-    }
-  }
+  static ApiClient get instance => _instance ??= ApiClient._();
+  Dio get dio => _dio;
 
-  String _parseErrorMessage(http.Response response) {
-    try {
-      final data = jsonDecode(response.body);
-      return data['detail'] ?? data['message'] ?? 'Erreur inconnue';
-    } catch (e) {
-      return 'Erreur ${response.statusCode}';
-    }
-  }
+  Future<Response> get(String path, {Map<String, dynamic>? params}) =>
+      _dio.get(path, queryParameters: params);
 
-  // ===== REQUÊTES =====
-  Future<dynamic> get(String endpoint, {Map<String, String>? params}) async {
-    try {
-      final headers = await _getHeaders();
-      final uri = Uri.parse(
-        '${AppConfig.apiBaseUrl}$endpoint',
-      ).replace(queryParameters: params);
+  Future<Response> post(String path, {dynamic data}) =>
+      _dio.post(path, data: data);
 
-      final response = await http.get(uri, headers: headers);
-      return _handleResponse(response);
-    } catch (e) {
-      throw ApiException(message: e.toString());
-    }
-  }
+  Future<Response> put(String path, {dynamic data}) =>
+      _dio.put(path, data: data);
 
-  Future<dynamic> post(String endpoint, {Map<String, dynamic>? data}) async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse('${AppConfig.apiBaseUrl}$endpoint'),
-        headers: headers,
-        body: data != null ? jsonEncode(data) : null,
-      );
-      return _handleResponse(response);
-    } catch (e) {
-      throw ApiException(message: e.toString());
-    }
-  }
+  Future<Response> delete(String path) => _dio.delete(path);
 
-  Future<dynamic> put(String endpoint, {Map<String, dynamic>? data}) async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.put(
-        Uri.parse('${AppConfig.apiBaseUrl}$endpoint'),
-        headers: headers,
-        body: data != null ? jsonEncode(data) : null,
-      );
-      return _handleResponse(response);
-    } catch (e) {
-      throw ApiException(message: e.toString());
-    }
-  }
-
-  Future<dynamic> delete(String endpoint) async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.delete(
-        Uri.parse('${AppConfig.apiBaseUrl}$endpoint'),
-        headers: headers,
-      );
-      return _handleResponse(response);
-    } catch (e) {
-      throw ApiException(message: e.toString());
-    }
-  }
-
-  // ===== MULTIPART (upload fichiers) =====
-  Future<dynamic> postMultipart(
-    String endpoint,
-    Map<String, String> fields,
-    Map<String, String> files,
-  ) async {
-    try {
-      final headers = await _getHeaders();
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${AppConfig.apiBaseUrl}$endpoint'),
-      );
-
-      request.headers.addAll(headers);
-      request.fields.addAll(fields);
-
-      for (var entry in files.entries) {
-        request.files.add(
-          await http.MultipartFile.fromPath(entry.key, entry.value),
-        );
-      }
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      return _handleResponse(response);
-    } catch (e) {
-      throw ApiException(message: e.toString());
-    }
-  }
+  Future<Response> uploadFile(String path, FormData data,
+      {void Function(int, int)? onSendProgress}) =>
+      _dio.post(path, data: data, onSendProgress: onSendProgress);
 }
 
-class ApiException implements Exception {
-  final int? statusCode;
-  final String message;
-
-  ApiException({this.statusCode, this.message = 'Erreur réseau'});
+class _AuthInterceptor extends Interceptor {
+  final FlutterSecureStorage _storage;
+  _AuthInterceptor(this._storage);
 
   @override
-  String toString() => message;
+  Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    final token = await _storage.read(key: AppConstants.accessTokenKey);
+    if (token != null) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+    handler.next(options);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    AppLogger.error('API Error: ${err.response?.statusCode} ${err.requestOptions.path}');
+    handler.next(err);
+  }
 }

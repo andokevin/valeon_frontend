@@ -1,12 +1,15 @@
-// lib/models/chat_model.dart
+import 'dart:convert';
+
+enum MessageRole { user, assistant, system }
+
 class ChatMessage {
   final String id;
-  final String role; // 'user' ou 'assistant'
+  final MessageRole role;
   final String content;
   final DateTime timestamp;
   final bool synced;
 
-  ChatMessage({
+  const ChatMessage({
     required this.id,
     required this.role,
     required this.content,
@@ -14,66 +17,92 @@ class ChatMessage {
     this.synced = false,
   });
 
-  factory ChatMessage.user(String content) {
-    return ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      role: 'user',
-      content: content,
-      timestamp: DateTime.now(),
-    );
+  // ─── Factory constructors ────────────────────────────────────────────────
+
+  ChatMessage.user(String content)
+      : this(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          role: MessageRole.user,
+          content: content,
+          timestamp: DateTime.now(),
+        );
+
+  ChatMessage.assistant(String content)
+      : this(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          role: MessageRole.assistant,
+          content: content,
+          timestamp: DateTime.now(),
+        );
+
+  ChatMessage.system(String content)
+      : this(
+          id: 'system-${DateTime.now().millisecondsSinceEpoch}',
+          role: MessageRole.system,
+          content: content,
+          timestamp: DateTime.now(),
+        );
+
+  // ─── JSON ───────────────────────────────────────────────────────────────
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
+    id: json['id'] ?? '',
+    role: _roleFromString(json['role'] ?? 'assistant'),
+    content: json['content'] ?? '',
+    timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
+    synced: json['synced'] == true,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'role': _roleToString(role),
+    'content': content,
+    'timestamp': timestamp.toIso8601String(),
+    'synced': synced,
+  };
+
+  // ─── Database Map ───────────────────────────────────────────────────────
+
+  factory ChatMessage.fromMap(Map<String, dynamic> map) => ChatMessage.fromJson(map);
+  Map<String, dynamic> toMap() => toJson();
+
+  // ─── Helpers privés ─────────────────────────────────────────────────────
+
+  static MessageRole _roleFromString(String role) {
+    switch (role.toLowerCase()) {
+      case 'user': return MessageRole.user;
+      case 'system': return MessageRole.system;
+      default: return MessageRole.assistant;
+    }
   }
 
-  factory ChatMessage.assistant(String content) {
-    return ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      role: 'assistant',
-      content: content,
-      timestamp: DateTime.now(),
-    );
+  static String _roleToString(MessageRole role) {
+    switch (role) {
+      case MessageRole.user: return 'user';
+      case MessageRole.system: return 'system';
+      case MessageRole.assistant: return 'assistant';
+    }
   }
 
-  factory ChatMessage.fromMap(Map<String, dynamic> map) {
-    return ChatMessage(
-      id: map['id'],
-      role: map['role'],
-      content: map['content'],
-      timestamp: DateTime.parse(map['timestamp']),
-      synced: map['synced'] == 1,
-    );
-  }
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChatMessage &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'role': role,
-      'content': content,
-      'timestamp': timestamp.toIso8601String(),
-      'synced': synced ? 1 : 0,
-    };
-  }
-
-  // ✅ Méthode pour créer une copie avec synced modifié
-  ChatMessage copyWith({bool? synced}) {
-    return ChatMessage(
-      id: id,
-      role: role,
-      content: content,
-      timestamp: timestamp,
-      synced: synced ?? this.synced,
-    );
-  }
+  @override
+  int get hashCode => id.hashCode;
 }
 
 class ChatConversation {
   final String id;
   final String userId;
   final List<ChatMessage> messages;
+  final DateTime lastMessageAt;  // ✅ final normal
+  final bool synced;
 
-  // ✅ Rendu non-final pour pouvoir le modifier
-  DateTime lastMessageAt;
-  bool synced;
-
-  ChatConversation({
+  const ChatConversation({
     required this.id,
     required this.userId,
     required this.messages,
@@ -81,46 +110,56 @@ class ChatConversation {
     this.synced = false,
   });
 
-  factory ChatConversation.fromMap(Map<String, dynamic> map) {
-    return ChatConversation(
-      id: map['id'],
-      userId: map['userId'],
-      messages: (map['messages'] as List)
-          .map((m) => ChatMessage.fromMap(m))
-          .toList(),
-      lastMessageAt: DateTime.parse(map['lastMessageAt']),
-      synced: map['synced'] == 1,
-    );
-  }
+  // ✅ copyWith pour modifier l'état
+  ChatConversation copyWith({
+    String? id,
+    String? userId,
+    List<ChatMessage>? messages,
+    DateTime? lastMessageAt,
+    bool? synced,
+  }) =>
+      ChatConversation(
+        id: id ?? this.id,
+        userId: userId ?? this.userId,
+        messages: messages ?? this.messages,
+        lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+        synced: synced ?? this.synced,
+      );
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'userId': userId,
-      'messages': messages.map((m) => m.toMap()).toList(),
-      'lastMessageAt': lastMessageAt.toIso8601String(),
-      'synced': synced ? 1 : 0,
-    };
-  }
+  // ─── JSON ───────────────────────────────────────────────────────────────
 
-  // ✅ Méthode utilitaire pour ajouter un message
-  void addMessage(ChatMessage message) {
-    messages.add(message);
-    lastMessageAt = DateTime.now();
-    synced = false;
-  }
+  factory ChatConversation.fromJson(Map<String, dynamic> json) => ChatConversation(
+    id: json['id'] ?? '',
+    userId: json['userId'] ?? '',
+    messages: (json['messages'] as List<dynamic>? ?? [])
+        .map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))
+        .toList(),
+    lastMessageAt: DateTime.parse(json['lastMessageAt'] ?? DateTime.now().toIso8601String()),
+    synced: json['synced'] == true,
+  );
 
-  // ✅ Méthode pour créer une copie avec synced modifié
-  ChatConversation copyWith({bool? synced}) {
-    return ChatConversation(
-      id: id,
-      userId: userId,
-      messages: messages.map((m) => m).toList(),
-      lastMessageAt: lastMessageAt,
-      synced: synced ?? this.synced,
-    );
-  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'userId': userId,
+    'messages': messages.map((m) => m.toJson()).toList(),
+    'lastMessageAt': lastMessageAt.toIso8601String(),
+    'synced': synced,
+  };
 
-  // ✅ Obtenir le dernier message
-  ChatMessage? get lastMessage => messages.isNotEmpty ? messages.last : null;
+  // ─── Database Map ───────────────────────────────────────────────────────
+
+  factory ChatConversation.fromMap(Map<String, dynamic> map) => ChatConversation.fromJson(map);
+  Map<String, dynamic> toMap() => toJson();
+
+  // ─── Égalité ────────────────────────────────────────────────────────────
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChatConversation &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

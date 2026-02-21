@@ -1,18 +1,19 @@
-// lib/core/sync/sync_queue.dart
 import '../database/database_service.dart';
 import '../network/api_client.dart';
 import 'dart:convert';
 
 class SyncQueue {
   final DatabaseService _db = DatabaseService();
-  final ApiClient _api = ApiClient();
+
+  // ✅ Singleton — pas de new ApiClient()
+  final ApiClient _api = ApiClient.instance;
 
   Future<void> processQueue() async {
     final queue = await _db.getSyncQueue();
 
-    for (var item in queue) {
+    for (final item in queue) {
       try {
-        final data = jsonDecode(item['data']);
+        final data = jsonDecode(item['data'] as String);
 
         switch (item['operation']) {
           case 'INSERT':
@@ -24,10 +25,11 @@ class SyncQueue {
             break;
         }
 
-        await _db.removeFromSyncQueue(item['id']);
+        await _db.removeFromSyncQueue(item['id'] as String);
       } catch (e) {
         // Incrémenter le compteur de retry
-        await _db.incrementRetryCount(item['id']);
+        await _db.incrementRetryCount(item['id'] as String);
+        print('❌ Erreur sync queue ${item['id']}: $e');
       }
     }
   }

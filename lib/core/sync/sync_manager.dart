@@ -1,17 +1,18 @@
-// lib/core/sync/sync_manager.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../database/database_service.dart';
 import '../network/api_client.dart';
 import '../network/connectivity_service.dart';
 import '../../models/user_model.dart';
-import 'package:http/http.dart' as http;
-import '../../config/app_config.dart';
 import '../../utils/secure_storage.dart';
+import '../constants/app_constants.dart';
 
 class SyncManager extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
-  final ApiClient _api = ApiClient();
+
+  // ✅ Utiliser le singleton — pas new ApiClient()
+  final ApiClient _api = ApiClient.instance;
   final ConnectivityService _connectivity = ConnectivityService();
 
   Timer? _syncTimer;
@@ -46,7 +47,7 @@ class SyncManager extends ChangeNotifier {
     await syncAll();
   }
 
-  Future<void> syncAll({User? user}) async {
+  Future<void> syncAll({UserModel? user}) async {
     if (_isSyncing) return;
 
     _isSyncing = true;
@@ -57,24 +58,27 @@ class SyncManager extends ChangeNotifier {
       // 1. Synchroniser les scans
       await _syncScans();
       _syncProgress = 25;
+      notifyListeners();
 
       // 2. Synchroniser les favoris
       await _syncFavorites();
       _syncProgress = 50;
+      notifyListeners();
 
       // 3. Synchroniser les chats
       await _syncChats();
       _syncProgress = 75;
+      notifyListeners();
 
-      // 4. Synchroniser les utilisateurs
+      // 4. Synchroniser l'utilisateur
       if (user != null) {
         await _syncUser(user);
       }
       _syncProgress = 100;
-
       _lastSyncError = null;
     } catch (e) {
       _lastSyncError = e.toString();
+      debugPrint('❌ Erreur sync globale: $e');
     } finally {
       _isSyncing = false;
       notifyListeners();
@@ -84,21 +88,21 @@ class SyncManager extends ChangeNotifier {
   Future<void> _syncScans() async {
     final unsynced = await _db.getUnsyncedScans();
 
-    for (var scan in unsynced) {
+    for (final scan in unsynced) {
       try {
         if (scan.filePath != null) {
-          // Upload le fichier
-          var request = http.MultipartRequest(
+          final token = await SecureStorage().getToken();
+          final request = http.MultipartRequest(
             'POST',
-            Uri.parse('${AppConfig.apiBaseUrl}/scans/${scan.type}'),
+            Uri.parse('${AppConstants.baseUrl}/scans/${scan.type}'),
           );
           request.files.add(
             await http.MultipartFile.fromPath('file', scan.filePath!),
           );
           request.fields['source'] = scan.inputSource ?? 'file';
-
-          final token = await SecureStorage().getToken();
-          request.headers['Authorization'] = 'Bearer $token';
+          if (token != null) {
+            request.headers['Authorization'] = 'Bearer $token';
+          }
 
           final response = await request.send();
           if (response.statusCode == 200 || response.statusCode == 202) {
@@ -106,7 +110,7 @@ class SyncManager extends ChangeNotifier {
           }
         }
       } catch (e) {
-        print('❌ Erreur sync scan ${scan.id}: $e');
+        debugPrint('❌ Erreur sync scan ${scan.id}: $e');
       }
     }
   }
@@ -119,11 +123,11 @@ class SyncManager extends ChangeNotifier {
     // TODO: Implémenter sync chats
   }
 
-  Future<void> _syncUser(User user) async {
+  Future<void> _syncUser(UserModel user) async {
     try {
-      await _api.post('/users/sync', data: user.toMap());
+      await _api.post('/users/sync', data: user.toJson());
     } catch (e) {
-      print('❌ Erreur sync user: $e');
+      debugPrint('❌ Erreur sync user: $e');
     }
   }
 
@@ -137,7 +141,6 @@ class SyncManager extends ChangeNotifier {
       tableName: tableName,
       data: data,
     );
-
     if (_connectivity.isOnline) {
       _autoSync();
     }

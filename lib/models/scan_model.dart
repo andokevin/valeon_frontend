@@ -1,72 +1,104 @@
-// lib/models/scan_model.dart
-enum ScanType { audio, image, video }
+import 'dart:convert';
+import 'content_model.dart';
 
 enum ScanStatus { pending, processing, completed, failed }
+enum ScanType { audio, image, video }
 
-class Scan {
-  final String id;
-  final String userId;
-  final ScanType type;
-  final String? inputSource;
+class ScanModel {
+  final int? scanId;
+  final ScanType scanType;
+  final String inputSource;
+  final ScanStatus status;
   final Map<String, dynamic>? result;
-  final String? filePath;
-  final bool synced;
-  final DateTime scannedAt;
+  final String? error;
+  final DateTime scanDate;
+  final double? processingTime;
+  final ContentModel? content;
 
-  Scan({
-    required this.id,
-    required this.userId,
-    required this.type,
-    this.inputSource,
+  // ✅ Ajout du champ filePath pour le sync
+  final String? filePath;
+
+  const ScanModel({
+    this.scanId,
+    required this.scanType,
+    required this.inputSource,
+    required this.status,
     this.result,
-    this.filePath,
-    this.synced = false,
-    required this.scannedAt,
+    this.error,
+    required this.scanDate,
+    this.processingTime,
+    this.content,
+    this.filePath,          // ✅ nouveau
   });
 
-  factory Scan.fromMap(Map<String, dynamic> map) {
-    return Scan(
-      id: map['id'],
-      userId: map['userId'],
-      type: ScanType.values.firstWhere(
-        (e) => e.toString() == 'ScanType.${map['type']}',
-        orElse: () => ScanType.audio,
-      ),
-      inputSource: map['inputSource'],
-      result: map['result'] != null
-          ? Map<String, dynamic>.from(map['result'])
-          : null,
-      filePath: map['filePath'],
-      synced: map['synced'] == 1,
-      scannedAt: DateTime.parse(map['scannedAt']),
-    );
-  }
+  // ✅ Getter pratique : type en String pour les requêtes HTTP
+  String get type => scanType.name;
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'userId': userId,
-      'type': type.toString().split('.').last,
-      'inputSource': inputSource,
-      'result': result,
-      'filePath': filePath,
-      'synced': synced ? 1 : 0,
-      'scannedAt': scannedAt.toIso8601String(),
-    };
-  }
+  // ✅ Getter id String pour compatibilité avec DatabaseService
+  String get id => scanId?.toString() ?? '';
 
-  String get timeAgo {
-    final now = DateTime.now();
-    final difference = now.difference(scannedAt);
+  factory ScanModel.fromJson(Map<String, dynamic> json) => ScanModel(
+    scanId: json['scan_id'],
+    scanType: ScanType.values.firstWhere(
+      (e) => e.name == (json['scan_type'] ?? 'audio'),
+      orElse: () => ScanType.audio,
+    ),
+    inputSource: json['input_source'] ?? 'file',
+    status: ScanStatus.values.firstWhere(
+      (e) => e.name == (json['status'] ?? 'pending'),
+      orElse: () => ScanStatus.pending,
+    ),
+    result: json['result'] is Map
+        ? Map<String, dynamic>.from(json['result'])
+        : null,
+    error: json['error'],
+    scanDate: DateTime.tryParse(json['scan_date'] ?? '') ?? DateTime.now(),
+    processingTime: (json['processing_time'] as num?)?.toDouble(),
+    content: json['content'] != null
+        ? ContentModel.fromJson(json['content'])
+        : null,
+    filePath: json['file_path'],       // ✅ nouveau
+  );
 
-    if (difference.inMinutes < 60) {
-      return 'Il y a ${difference.inMinutes} min';
-    } else if (difference.inHours < 24) {
-      return 'Il y a ${difference.inHours} h';
-    } else if (difference.inDays < 7) {
-      return 'Il y a ${difference.inDays} j';
-    } else {
-      return 'Il y a ${(difference.inDays / 7).floor()} sem';
+  factory ScanModel.fromDbMap(Map<String, dynamic> map) => ScanModel(
+    scanId: map['scan_id'],
+    scanType: ScanType.values.firstWhere(
+      (e) => e.name == map['scan_type'],
+      orElse: () => ScanType.audio,
+    ),
+    inputSource: map['input_source'] ?? 'file',
+    status: ScanStatus.values.firstWhere(
+      (e) => e.name == map['status'],
+      orElse: () => ScanStatus.pending,
+    ),
+    result: map['result'] != null
+        ? jsonDecode(map['result']) as Map<String, dynamic>
+        : null,
+    error: map['error'],
+    scanDate: DateTime.tryParse(map['scan_date'] ?? '') ?? DateTime.now(),
+    processingTime: (map['processing_time'] as num?)?.toDouble(),
+    filePath: map['file_path'],        // ✅ nouveau
+  );
+
+  Map<String, dynamic> toDbMap() => {
+    if (scanId != null) 'scan_id': scanId,
+    'scan_type': scanType.name,
+    'input_source': inputSource,
+    'status': status.name,
+    'result': result != null ? jsonEncode(result) : null,
+    'error': error,
+    'scan_date': scanDate.toIso8601String(),
+    'processing_time': processingTime,
+    'file_path': filePath,             // ✅ nouveau
+    'synced': 0,
+  };
+
+  String get statusLabel {
+    switch (status) {
+      case ScanStatus.pending: return 'En attente';
+      case ScanStatus.processing: return 'Traitement...';
+      case ScanStatus.completed: return 'Terminé';
+      case ScanStatus.failed: return 'Échoué';
     }
   }
 }

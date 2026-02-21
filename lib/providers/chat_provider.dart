@@ -1,10 +1,8 @@
-// lib/providers/chat_provider.dart
 import 'package:flutter/material.dart';
-import '../models/user_model.dart'; // ✅ Correction: import du bon User
+import '../models/user_model.dart';
 import '../models/chat_model.dart';
 import '../services/chat_service.dart';
 import '../core/database/database_service.dart';
-import '../core/network/connectivity_service.dart';
 import 'connectivity_provider.dart';
 
 class ChatProvider extends ChangeNotifier {
@@ -29,55 +27,55 @@ class ChatProvider extends ChangeNotifier {
     _connectivity = connectivity;
   }
 
-  // ===== CHARGEMENT DE LA CONVERSATION =====
-  // ✅ Renommé de loadConversation à loadChat pour correspondre à l'appel
-  Future<void> loadChat(User user) async {
+  // ── Helper : convertit userId en String une seule fois ────────────────────
+  String _uid(UserModel user) => user.userId.toString();
+
+  // ===== CHARGEMENT DE LA CONVERSATION =====================================
+  Future<void> loadChat(UserModel user) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final conversation = await _service.getOrCreateChat(user.id);
+      final conversation = await _service.getOrCreateChat(_uid(user));
       _messages = conversation.messages;
       _currentConversationId = conversation.id;
 
-      // Marquer les messages non synchronisés
       if (_connectivity.isOnline) {
         await _syncUnsyncedMessages(user);
       }
     } catch (e) {
       _errorMessage = e.toString();
-      print('❌ Erreur chargement conversation: $e');
+      debugPrint('❌ Erreur chargement conversation: $e');
     }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  // ✅ Version alternative pour compatibilité (si loadConversation est appelé ailleurs)
-  Future<void> loadConversation(User user) => loadChat(user);
+  Future<void> loadConversation(UserModel user) => loadChat(user);
 
-  // ===== ENVOI DE MESSAGE =====
-  Future<void> sendMessage(String content, User user) async {
+  // ===== ENVOI DE MESSAGE ==================================================
+  Future<void> sendMessage(String content, UserModel user) async {
     if (content.trim().isEmpty) return;
 
-    // Message utilisateur
     final userMessage = ChatMessage.user(content);
     _messages.add(userMessage);
     _isTyping = true;
     notifyListeners();
 
     try {
-      final assistantMessage = await _service.sendMessage(user.id, content);
+      final assistantMessage = await _service.sendMessage(_uid(user), content);
       _messages.add(assistantMessage);
 
-      // Synchroniser si connecté
+      // ✅ Sauvegarder localement après envoi
+      await _db.saveMessage(_uid(user), userMessage);
+      await _db.saveMessage(_uid(user), assistantMessage);
+
       if (_connectivity.isOnline) {
         await _syncMessages(user);
       }
     } catch (e) {
       _errorMessage = 'Erreur: ${e.toString()}';
-
-      // Message d'erreur
       _messages.add(
         ChatMessage.assistant(
           'Désolé, une erreur est survenue. Veuillez réessayer.',
@@ -89,55 +87,47 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ===== SYNC DES MESSAGES =====
-  Future<void> _syncMessages(User user) async {
+  // ===== SYNC ===============================================================
+  Future<void> _syncMessages(UserModel user) async {
     try {
-      final unsynced = await _db.getUnsyncedMessages(user.id);
-
-      for (var message in unsynced) {
-        // Envoyer au backend
-        final response = await _service.syncMessage(user.id, message);
-
+      final unsynced = await _db.getUnsyncedMessages(_uid(user));
+      for (final message in unsynced) {
+        final response = await _service.syncMessage(_uid(user), message);
         if (response != null) {
-          await _db.markMessageAsSynced(message.id);
+          // ✅ CORRIGÉ : Utiliser la méthode correcte
+          await _db.markMessagesAsSynced(_uid(user));
         }
       }
     } catch (e) {
-      print('❌ Erreur sync messages: $e');
+      debugPrint('❌ Erreur sync messages: $e');
     }
   }
 
-  Future<void> _syncUnsyncedMessages(User user) async {
-    // Récupérer les messages du backend qui manquent localement
+  Future<void> _syncUnsyncedMessages(UserModel user) async {
     try {
-      final remoteMessages = await _service.getRemoteMessages(user.id);
-
-      for (var remoteMsg in remoteMessages) {
+      final remoteMessages = await _service.getRemoteMessages(_uid(user));
+      for (final remoteMsg in remoteMessages) {
         final exists = _messages.any((m) => m.id == remoteMsg.id);
         if (!exists) {
           _messages.add(remoteMsg);
-          await _db.saveMessage(user.id, remoteMsg);
+          await _db.saveMessage(_uid(user), remoteMsg);
         }
       }
-
       notifyListeners();
     } catch (e) {
-      print('❌ Erreur sync messages distants: $e');
+      debugPrint('❌ Erreur sync messages distants: $e');
     }
   }
 
-  // ===== ACTIONS SUR LA CONVERSATION =====
-  Future<void> clearHistory(User user) async {
+  // ===== ACTIONS ===========================================================
+  Future<void> clearHistory(UserModel user) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      await _service.clearHistory(user.id);
-
+      await _service.clearHistory(_uid(user));
       _messages = [
-        ChatMessage.assistant(
-          'Historique effacé. Comment puis-je vous aider ?',
-        ),
+        ChatMessage.assistant('Historique effacé. Comment puis-je vous aider ?'),
       ];
     } catch (e) {
       _errorMessage = e.toString();
@@ -147,39 +137,34 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> deleteMessage(String messageId, User user) async {
+  Future<void> deleteMessage(String messageId, UserModel user) async {
     try {
       _messages.removeWhere((m) => m.id == messageId);
       await _db.deleteMessage(messageId);
-
       if (_connectivity.isOnline) {
-        await _service.deleteRemoteMessage(user.id, messageId);
+        await _service.deleteRemoteMessage(_uid(user), messageId);
       }
-
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
     }
   }
 
-  // ===== UTILITAIRES =====
-  void retryLastMessage(User user) {
+  // ===== UTILITAIRES =======================================================
+  void retryLastMessage(UserModel user) {
     if (_messages.isEmpty) return;
 
     final lastUserMessage = _messages.lastWhere(
-      (m) => m.role == 'user',
+      (m) => m.role == MessageRole.user,
       orElse: () => ChatMessage.user(''),
     );
 
     if (lastUserMessage.content.isNotEmpty) {
-      // Supprimer les 2 derniers messages (user + réponse erronée)
       _messages.removeWhere(
         (m) =>
             m.id == lastUserMessage.id ||
             (_messages.indexOf(m) > _messages.indexOf(lastUserMessage)),
       );
-
-      // Renvoyer
       sendMessage(lastUserMessage.content, user);
     }
   }
