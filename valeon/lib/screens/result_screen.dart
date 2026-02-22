@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../config/constants.dart';
 import '../widgets/platform_button.dart';
 import '../widgets/social_button.dart';

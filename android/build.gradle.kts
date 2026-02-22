@@ -1,7 +1,7 @@
-// android/build.gradle
+// android/build.gradle.kts
 plugins {
     // Plugin Google Services pour Firebase
-    id("com.google.gms.google-services") version "4.4.4" apply false
+    id("com.google.gms.google-services") version "4.4.2" apply false
 }
 
 allprojects {
@@ -11,10 +11,10 @@ allprojects {
     }
 }
 
-// Configuration du répertoire de build (version simplifiée)
-rootProject.buildDir = "../build"
+// Configuration du répertoire de build (version corrigée)
+rootProject.buildDir = file("../build")
 subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    project.buildDir = file("${rootProject.buildDir}/${project.name}")
 }
 
 // Assure l'ordre d'évaluation
@@ -24,5 +24,5 @@ subprojects {
 
 // Tâche de nettoyage
 tasks.register<Delete>("clean") {
-    delete(rootProject.buildDir)
+    delete(rootProject.layout.buildDirectory)
 }

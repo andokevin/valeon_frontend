@@ -8,24 +8,32 @@ plugins {
 
 android {
     namespace = "com.app.valeon"
-    compileSdk = 34
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        // ✅ Activation du desugaring pour flutter_local_notifications
-        coreLibraryDesugaringEnabled true
+        // ✅ Correction : utiliser = true avec le préfixe "is"
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
+        // jvmTarget est déprécié mais fonctionne encore, on garde pour l'instant
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
+    
+    // Alternative moderne (si vous voulez migrer)
+    // kotlin {
+    //     compilerOptions {
+    //         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    //     }
+    // }
 
     defaultConfig {
         applicationId = "com.app.valeon"
-        minSdk = 21  // ⚠️ Important : minimum 21 pour le desugaring
-        targetSdk = 34
+        minSdk = flutter.minSdkVersion  // ⚠️ Important : minimum 21 pour le desugaring
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -44,17 +52,16 @@ flutter {
 
 dependencies {
     // ✅ Dépendance OBLIGATOIRE pour le desugaring
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")  // Version mise à jour
 
     // Import the Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.12.0"))  // Dernière version stable
 
     // Firebase products
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth") // Si tu utilises Firebase Auth
+    implementation("com.google.firebase:firebase-auth")
     // implementation("com.google.firebase:firebase-firestore") // Si besoin
 
-    // Facebook SDK - version stable recommandée
-    implementation("com.facebook.android:facebook-android-sdk:17.0.0")
-    // ⚠️ Évite "latest.release" en production, fixe une version
+    // Facebook SDK
+    implementation("com.facebook.android:facebook-android-sdk:17.0.2")  // Dernière version stable
 }
