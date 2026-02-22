@@ -1,32 +1,39 @@
+// lib/core/sync/sync_manager.dart (MODIFIÉ)
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../database/database_service.dart';
 import '../network/api_client.dart';
 import '../network/connectivity_service.dart';
 import '../../models/user_model.dart';
+import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import '../../utils/secure_storage.dart';
-import '../constants/app_constants.dart';
 
 class SyncManager extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
-
-  // ✅ Utiliser le singleton — pas new ApiClient()
-  final ApiClient _api = ApiClient.instance;
+  final ApiClient _api = ApiClient();
   final ConnectivityService _connectivity = ConnectivityService();
+  final SecureStorage _secureStorage = SecureStorage();
 
   Timer? _syncTimer;
   bool _isSyncing = false;
   int _syncProgress = 0;
   String? _lastSyncError;
+  DateTime? _lastSyncTime;
 
   bool get isSyncing => _isSyncing;
   int get syncProgress => _syncProgress;
   String? get lastSyncError => _lastSyncError;
+  DateTime? get lastSyncTime => _lastSyncTime;
 
   SyncManager() {
     _initAutoSync();
     _connectivity.addListener(_onConnectivityChanged);
+    _loadLastSync();
+  }
+
+  Future<void> _loadLastSync() async {
+    _lastSyncTime = await _secureStorage.getLastSync();
   }
 
   void _initAutoSync() {
@@ -47,7 +54,7 @@ class SyncManager extends ChangeNotifier {
     await syncAll();
   }
 
-  Future<void> syncAll({UserModel? user}) async {
+  Future<void> syncAll({User? user}) async {
     if (_isSyncing) return;
 
     _isSyncing = true;
@@ -58,27 +65,26 @@ class SyncManager extends ChangeNotifier {
       // 1. Synchroniser les scans
       await _syncScans();
       _syncProgress = 25;
-      notifyListeners();
 
       // 2. Synchroniser les favoris
       await _syncFavorites();
       _syncProgress = 50;
-      notifyListeners();
 
       // 3. Synchroniser les chats
       await _syncChats();
       _syncProgress = 75;
-      notifyListeners();
 
       // 4. Synchroniser l'utilisateur
       if (user != null) {
         await _syncUser(user);
       }
       _syncProgress = 100;
+
       _lastSyncError = null;
+      _lastSyncTime = DateTime.now();
+      await _secureStorage.saveLastSync(_lastSyncTime!);
     } catch (e) {
       _lastSyncError = e.toString();
-      debugPrint('❌ Erreur sync globale: $e');
     } finally {
       _isSyncing = false;
       notifyListeners();
@@ -88,46 +94,77 @@ class SyncManager extends ChangeNotifier {
   Future<void> _syncScans() async {
     final unsynced = await _db.getUnsyncedScans();
 
-    for (final scan in unsynced) {
+    for (var scan in unsynced) {
       try {
         if (scan.filePath != null) {
-          final token = await SecureStorage().getToken();
-          final request = http.MultipartRequest(
+          var request = http.MultipartRequest(
             'POST',
-            Uri.parse('${AppConstants.baseUrl}/scans/${scan.type}'),
+            Uri.parse('${AppConfig.apiBaseUrl}/scans/${scan.type.name}'),
           );
           request.files.add(
             await http.MultipartFile.fromPath('file', scan.filePath!),
           );
           request.fields['source'] = scan.inputSource ?? 'file';
-          if (token != null) {
-            request.headers['Authorization'] = 'Bearer $token';
-          }
+
+          final token = await SecureStorage().getToken();
+          request.headers['Authorization'] = 'Bearer $token';
 
           final response = await request.send();
+          final responseData = await http.Response.fromStream(response);
+
           if (response.statusCode == 200 || response.statusCode == 202) {
             await _db.markScanAsSynced(scan.id);
           }
         }
       } catch (e) {
-        debugPrint('❌ Erreur sync scan ${scan.id}: $e');
+        print('❌ Erreur sync scan ${scan.id}: $e');
       }
     }
   }
 
   Future<void> _syncFavorites() async {
-    // TODO: Implémenter sync favoris
+    // Récupérer les favoris non synchronisés
+    final user = await _secureStorage.getUser();
+    if (user == null) return;
+
+    final favorites = await _db.getUserFavorites(user.id);
+    for (var fav in favorites) {
+      if (fav['synced'] == 0) {
+        try {
+          await _api.post('/library/favorites/${fav['contentId']}');
+          await _db.markFavoriteAsSynced(fav['id']);
+        } catch (e) {
+          print('❌ Erreur sync favori: $e');
+        }
+      }
+    }
   }
 
   Future<void> _syncChats() async {
-    // TODO: Implémenter sync chats
+    final user = await _secureStorage.getUser();
+    if (user == null) return;
+
+    final unsyncedMessages = await _db.getUnsyncedMessages(user.id);
+    for (var message in unsyncedMessages) {
+      try {
+        final response = await _api.post(
+          '/chat/messages',
+          data: {'userId': user.id, 'message': message.toMap()},
+        );
+        if (response != null) {
+          await _db.markMessageAsSynced(message.id);
+        }
+      } catch (e) {
+        print('❌ Erreur sync message: $e');
+      }
+    }
   }
 
-  Future<void> _syncUser(UserModel user) async {
+  Future<void> _syncUser(User user) async {
     try {
-      await _api.post('/users/sync', data: user.toJson());
+      await _api.post('/users/sync', data: user.toMap());
     } catch (e) {
-      debugPrint('❌ Erreur sync user: $e');
+      print('❌ Erreur sync user: $e');
     }
   }
 
@@ -141,8 +178,28 @@ class SyncManager extends ChangeNotifier {
       tableName: tableName,
       data: data,
     );
+
     if (_connectivity.isOnline) {
       _autoSync();
+    }
+  }
+
+  String get syncStatusMessage {
+    if (_isSyncing) {
+      return 'Synchronisation... $_syncProgress%';
+    } else if (_lastSyncError != null) {
+      return 'Erreur de synchronisation';
+    } else if (_lastSyncTime != null) {
+      final diff = DateTime.now().difference(_lastSyncTime!);
+      if (diff.inMinutes < 1) {
+        return 'Synchronisé à l\'instant';
+      } else if (diff.inHours < 1) {
+        return 'Synchronisé il y a ${diff.inMinutes} min';
+      } else {
+        return 'Synchronisé à ${_lastSyncTime!.hour}:${_lastSyncTime!.minute.toString().padLeft(2, '0')}';
+      }
+    } else {
+      return 'Jamais synchronisé';
     }
   }
 
