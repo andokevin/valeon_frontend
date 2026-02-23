@@ -1,5 +1,5 @@
-import 'dart:convert';
-import 'content_model.dart';
+// lib/models/favorite_model.dart
+import 'package:valeon/models/content_model.dart';
 
 class FavoriteModel {
   final int favoriteId;
@@ -23,21 +23,33 @@ class FavoriteModel {
   });
 
   factory FavoriteModel.fromJson(Map<String, dynamic> json) => FavoriteModel(
-    favoriteId: json['favorite_id'],
-    contentId: json['content_id'],
-    contentTitle: json['content_title'] ?? '',
-    contentType: json['content_type'] ?? 'unknown',
-    contentImage: json['content_image'],
-    contentArtist: json['content_artist'],
-    notes: json['notes'],
-    createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
-  );
+        favoriteId: json['favorite_id'] ?? json['favoriteId'] ?? 0,
+        contentId: json['content_id'] ?? json['contentId'] ?? 0,
+        contentTitle: json['content_title'] ?? json['title'] ?? '',
+        contentType: json['content_type'] ?? json['type'] ?? 'unknown',
+        contentImage: json['content_image'] ?? json['image'],
+        contentArtist: json['content_artist'] ?? json['artist'],
+        notes: json['notes'],
+        createdAt: DateTime.parse(
+            json['created_at'] ?? DateTime.now().toIso8601String()),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'favorite_id': favoriteId,
+        'content_id': contentId,
+        'content_title': contentTitle,
+        'content_type': contentType,
+        'content_image': contentImage,
+        'content_artist': contentArtist,
+        'notes': notes,
+        'created_at': createdAt.toIso8601String(),
+      };
 
   ContentModel toContent() => ContentModel(
-    contentId: contentId,
-    contentType: contentType,
-    contentTitle: contentTitle,
-    contentArtist: contentArtist,
-    contentImage: contentImage,
-  );
+        contentId: contentId,
+        contentType: contentType,
+        contentTitle: contentTitle,
+        contentArtist: contentArtist,
+        contentImage: contentImage,
+      );
 }

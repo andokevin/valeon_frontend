@@ -1,90 +1,121 @@
+// lib/widgets/home/recommendation_section.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme/app_theme.dart';
-import '../../providers/recommendation_provider.dart';
+import '../../config/app_theme.dart';
+import '../../models/content_model.dart';
 
-class RecommendationSection extends ConsumerWidget {
-  const RecommendationSection({super.key});
+class RecommendationSection extends StatelessWidget {
+  final List<ContentModel> recommendations;
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final reco = ref.watch(personalizedProvider);
-
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Recommandé pour vous',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700,
-          color: AppTheme.onBackground)),
-      const SizedBox(height: 16),
-      reco.when(
-        loading: () => const SizedBox(height: 80,
-          child: Center(child: CircularProgressIndicator())),
-        error: (_, __) => const SizedBox.shrink(),
-        data: (items) => items.isEmpty
-            ? const Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: Text(
-                  'Scannez plus de contenus pour des recommandations personnalisées',
-                  style: TextStyle(color: AppTheme.onSurface, fontSize: 13),
-                ),
-              )
-            : ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: items.length > 5 ? 5 : items.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (ctx, i) => _RecommendationTile(item: items[i]),
-              ),
-      ),
-    ]);
-  }
-}
-
-class _RecommendationTile extends StatelessWidget {
-  final Map<String, dynamic> item;
-  const _RecommendationTile({required this.item});
+  const RecommendationSection({super.key, required this.recommendations});
 
   @override
   Widget build(BuildContext context) {
-    final type = item['type'] ?? 'unknown';
-    final (icon, color) = switch (type) {
-      'music' => (Icons.music_note_rounded, AppTheme.primary),
-      'movie' => (Icons.movie_rounded, Colors.orange),
-      'tv_show' => (Icons.tv_rounded, Colors.teal),
-      _ => (Icons.star_rounded, AppTheme.secondary),
-    };
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.15)),
-      ),
-      child: Row(children: [
-        Container(
-          width: 44, height: 44,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12), shape: BoxShape.circle),
-          child: Icon(icon, color: color, size: 22),
+    if (recommendations.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(bottom: 8),
+        child: Text(
+          'Scannez plus de contenus pour des recommandations personnalisées',
+          style: TextStyle(color: Colors.white70, fontSize: 13),
         ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(item['title'] ?? '',
-            maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w600,
-              color: AppTheme.onBackground, fontSize: 14)),
-          if (item['artist'] != null)
-            Text(item['artist'],
-              style: const TextStyle(color: AppTheme.onSurface, fontSize: 12)),
-          if (item['reason'] != null)
-            Text(item['reason'],
-              style: TextStyle(color: color, fontSize: 11,
-                fontWeight: FontWeight.w500)),
-        ])),
-        if (item['confidence'] != null)
-          Text('${((item['confidence'] as num) * 100).toInt()}%',
-            style: const TextStyle(color: AppTheme.onSurface, fontSize: 12)),
-      ]),
+      );
+    }
+
+    return Column(
+      children: recommendations.take(5).map((item) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _buildRecommendationTile(context, item),
+        );
+      }).toList(),
     );
+  }
+
+  Widget _buildRecommendationTile(BuildContext context, ContentModel item) {
+    final (icon, color) = _getTypeData(item.contentType);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/scan/result',
+          arguments: {
+            'title': item.contentTitle,
+            'artist': item.contentArtist,
+            'type': item.contentType,
+            'image': item.contentImage,
+            'content_id': item.contentId,
+          },
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.contentTitle,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (item.contentArtist != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      item.contentArtist!,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white54,
+              size: 14,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  (IconData, Color) _getTypeData(String type) {
+    switch (type) {
+      case 'music':
+        return (Icons.music_note, AppColors.primaryBlue);
+      case 'movie':
+      case 'movie_poster':
+        return (Icons.movie, Colors.purple);
+      case 'tv_show':
+        return (Icons.tv, Colors.teal);
+      default:
+        return (Icons.star, AppColors.secondary);
+    }
   }
 }

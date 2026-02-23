@@ -1,4 +1,5 @@
-import 'content_model.dart';
+// lib/models/playlist_model.dart
+import 'package:valeon/models/content_model.dart';
 
 class PlaylistModel {
   final int playlistId;
@@ -22,15 +23,32 @@ class PlaylistModel {
   });
 
   factory PlaylistModel.fromJson(Map<String, dynamic> json) => PlaylistModel(
-    playlistId: json['playlist_id'],
-    playlistName: json['playlist_name'] ?? '',
-    playlistDescription: json['playlist_description'],
-    playlistImage: json['playlist_image'],
-    contentCount: json['content_count'] ?? 0,
-    createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
-    updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toIso8601String()),
-    contents: (json['contents'] as List<dynamic>?)
-        ?.map((c) => ContentModel.fromJson(c))
-        .toList() ?? [],
-  );
+        playlistId: json['playlist_id'] ?? json['playlistId'] ?? 0,
+        playlistName: json['playlist_name'] ?? json['name'] ?? '',
+        playlistDescription:
+            json['playlist_description'] ?? json['description'],
+        playlistImage: json['playlist_image'] ?? json['image'],
+        contentCount: json['content_count'] ?? json['count'] ?? 0,
+        createdAt: DateTime.parse(json['created_at'] ??
+            json['createdAt'] ??
+            DateTime.now().toIso8601String()),
+        updatedAt: DateTime.parse(json['updated_at'] ??
+            json['updatedAt'] ??
+            DateTime.now().toIso8601String()),
+        contents: (json['contents'] as List<dynamic>?)
+                ?.map((c) => ContentModel.fromJson(c))
+                .toList() ??
+            [],
+      );
+
+  Map<String, dynamic> toJson() => {
+        'playlist_id': playlistId,
+        'playlist_name': playlistName,
+        'playlist_description': playlistDescription,
+        'playlist_image': playlistImage,
+        'content_count': contentCount,
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+        'contents': contents.map((c) => c.toJson()).toList(),
+      };
 }

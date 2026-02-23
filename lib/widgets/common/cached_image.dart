@@ -1,7 +1,8 @@
+// lib/widgets/common/cached_image.dart
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../core/theme/app_theme.dart';
+import '../../config/app_theme.dart';
 
 class CachedImageWidget extends StatelessWidget {
   final String? url;
@@ -24,27 +25,47 @@ class CachedImageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (url == null || url!.isEmpty) {
-      return _fallback();
+      return _buildFallback();
     }
+
     Widget image = CachedNetworkImage(
       imageUrl: url!,
-      width: width, height: height, fit: fit,
-      placeholder: (_, __) => Shimmer.fromColors(
-        baseColor: AppTheme.surfaceVariant,
-        highlightColor: AppTheme.surface,
-        child: Container(color: AppTheme.surfaceVariant, width: width, height: height),
-      ),
-      errorWidget: (_, __, ___) => _fallback(),
+      width: width,
+      height: height,
+      fit: fit,
+      placeholder: (context, url) => _buildShimmer(),
+      errorWidget: (context, url, error) => _buildFallback(),
     );
+
     if (borderRadius != null) {
       image = ClipRRect(borderRadius: borderRadius!, child: image);
     }
+
     return image;
   }
 
-  Widget _fallback() => placeholder ?? Container(
-    width: width, height: height,
-    color: AppTheme.surfaceVariant,
-    child: const Icon(Icons.image_rounded, color: AppTheme.onSurface),
-  );
+  Widget _buildShimmer() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        width: width,
+        height: height,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildFallback() {
+    return Container(
+      width: width,
+      height: height,
+      color: AppColors.surfaceVariant,
+      child: Icon(
+        Icons.image,
+        size: (width ?? 50) * 0.5,
+        color: AppColors.onSurface,
+      ),
+    );
+  }
 }

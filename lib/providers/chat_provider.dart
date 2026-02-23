@@ -1,3 +1,4 @@
+// lib/providers/chat_provider.dart
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/chat_model.dart';
@@ -16,7 +17,6 @@ class ChatProvider extends ChangeNotifier {
   String? _errorMessage;
   String? _currentConversationId;
 
-  // Getters
   List<ChatMessage> get messages => _messages;
   bool get isLoading => _isLoading;
   bool get isTyping => _isTyping;
@@ -27,16 +27,12 @@ class ChatProvider extends ChangeNotifier {
     _connectivity = connectivity;
   }
 
-  // ── Helper : convertit userId en String une seule fois ────────────────────
-  String _uid(UserModel user) => user.userId.toString();
-
-  // ===== CHARGEMENT DE LA CONVERSATION =====================================
   Future<void> loadChat(UserModel user) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final conversation = await _service.getOrCreateChat(_uid(user));
+      final conversation = await _service.getOrCreateChat(user.userId);
       _messages = conversation.messages;
       _currentConversationId = conversation.id;
 
@@ -52,9 +48,6 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadConversation(UserModel user) => loadChat(user);
-
-  // ===== ENVOI DE MESSAGE ==================================================
   Future<void> sendMessage(String content, UserModel user) async {
     if (content.trim().isEmpty) return;
 
@@ -64,12 +57,12 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final assistantMessage = await _service.sendMessage(_uid(user), content);
+      final assistantMessage = await _service.sendMessage(user.userId, content);
       _messages.add(assistantMessage);
 
-      // ✅ Sauvegarder localement après envoi
-      await _db.saveMessage(_uid(user), userMessage);
-      await _db.saveMessage(_uid(user), assistantMessage);
+      // Sauvegarder localement
+      await _db.saveMessage(user.userId, userMessage);
+      await _db.saveMessage(user.userId, assistantMessage);
 
       if (_connectivity.isOnline) {
         await _syncMessages(user);
@@ -78,8 +71,7 @@ class ChatProvider extends ChangeNotifier {
       _errorMessage = 'Erreur: ${e.toString()}';
       _messages.add(
         ChatMessage.assistant(
-          'Désolé, une erreur est survenue. Veuillez réessayer.',
-        ),
+            'Désolé, une erreur est survenue. Veuillez réessayer.'),
       );
     }
 
@@ -87,15 +79,13 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ===== SYNC ===============================================================
   Future<void> _syncMessages(UserModel user) async {
     try {
-      final unsynced = await _db.getUnsyncedMessages(_uid(user));
+      final unsynced = await _db.getUnsyncedMessages(user.userId);
       for (final message in unsynced) {
-        final response = await _service.syncMessage(_uid(user), message);
+        final response = await _service.syncMessage(user.userId, message);
         if (response != null) {
-          // ✅ CORRIGÉ : Utiliser la méthode correcte
-          await _db.markMessagesAsSynced(_uid(user));
+          await _db.markMessagesAsSynced(user.userId);
         }
       }
     } catch (e) {
@@ -105,12 +95,12 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> _syncUnsyncedMessages(UserModel user) async {
     try {
-      final remoteMessages = await _service.getRemoteMessages(_uid(user));
+      final remoteMessages = await _service.getRemoteMessages(user.userId);
       for (final remoteMsg in remoteMessages) {
         final exists = _messages.any((m) => m.id == remoteMsg.id);
         if (!exists) {
           _messages.add(remoteMsg);
-          await _db.saveMessage(_uid(user), remoteMsg);
+          await _db.saveMessage(user.userId, remoteMsg);
         }
       }
       notifyListeners();
@@ -119,15 +109,15 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  // ===== ACTIONS ===========================================================
   Future<void> clearHistory(UserModel user) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      await _service.clearHistory(_uid(user));
+      await _service.clearHistory(user.userId);
       _messages = [
-        ChatMessage.assistant('Historique effacé. Comment puis-je vous aider ?'),
+        ChatMessage.assistant(
+            'Historique effacé. Comment puis-je vous aider ?'),
       ];
     } catch (e) {
       _errorMessage = e.toString();
@@ -142,7 +132,7 @@ class ChatProvider extends ChangeNotifier {
       _messages.removeWhere((m) => m.id == messageId);
       await _db.deleteMessage(messageId);
       if (_connectivity.isOnline) {
-        await _service.deleteRemoteMessage(_uid(user), messageId);
+        await _service.deleteRemoteMessage(user.userId, messageId);
       }
       notifyListeners();
     } catch (e) {
@@ -150,7 +140,6 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  // ===== UTILITAIRES =======================================================
   void retryLastMessage(UserModel user) {
     if (_messages.isEmpty) return;
 

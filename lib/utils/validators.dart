@@ -21,8 +21,8 @@ class Validators {
       return 'Mot de passe requis';
     }
 
-    if (value.length < 6) {
-      return 'Minimum 6 caractères';
+    if (value.length < 8) {
+      return 'Minimum 8 caractères';
     }
 
     if (!value.contains(RegExp(r'[A-Z]'))) {

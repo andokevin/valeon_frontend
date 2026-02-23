@@ -1,36 +1,67 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'core/theme/app_theme.dart';
-import 'routes/app_router.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'config/app_theme.dart';
+import 'providers/auth_provider.dart';
+import 'providers/scan_provider.dart';
+import 'providers/chat_provider.dart';
+import 'providers/sync_provider.dart';
+import 'providers/connectivity_provider.dart';
+import 'screens/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ AJOUT OBLIGATOIRE : initialiser Firebase avant tout
   await Firebase.initializeApp();
 
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-  ));
+  await FacebookAuth.instance.webAndDesktopInitialize(
+    appId: "1409022630714902",
+    cookie: true,
+    xfbml: true,
+    version: "v18.0",
+  );
 
-  runApp(const ProviderScope(child: ValeonApp()));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ),
+  );
+
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]).then((_) {
+    runApp(const ValeonApp());
+  });
 }
 
-class ValeonApp extends ConsumerWidget {
+class ValeonApp extends StatelessWidget {
   const ValeonApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
-    return MaterialApp.router(
-      title: 'Valeon',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
-      routerConfig: router,
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ScanProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => SyncProvider()),
+      ],
+      child: Consumer<ConnectivityProvider>(
+        builder: (context, connectivity, child) {
+          return MaterialApp(
+            title: 'Valeon',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            home: const AuthWrapper(),
+          );
+        },
+      ),
     );
   }
 }

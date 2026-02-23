@@ -1,234 +1,311 @@
-import 'package:flutter/foundation.dart';
+// lib/providers/auth_provider.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../core/database/database_service.dart';
+import '../core/network/connectivity_service.dart';
+import '../utils/secure_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 
-enum AuthStatus {
-  initial,
-  loading,
-  authenticated,
-  unauthenticated,
-  error,
-}
+enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
-class AuthState {
-  final AuthStatus status;
-  final UserModel? user;
-  final String? error;
-  final bool isPremium;
+class AuthProvider extends ChangeNotifier {
+  final AuthService _authService = AuthService();
+  final DatabaseService _db = DatabaseService();
+  final ConnectivityService _connectivity = ConnectivityService();
+  final SecureStorage _secureStorage = SecureStorage();
 
-  const AuthState({
-    this.status = AuthStatus.initial,
-    this.user,
-    this.error,
-    this.isPremium = false,
-  });
+  UserModel? _user;
+  fb.User? _firebaseUser;
+  AuthStatus _status = AuthStatus.initial;
+  String? _errorMessage;
+  bool _isOfflineMode = false;
 
-  AuthState copyWith({
-    AuthStatus? status,
-    UserModel? user,
-    String? error,
-    bool? isPremium,
-  }) =>
-      AuthState(
-        status: status ?? this.status,
-        user: user ?? this.user,
-        error: error ?? this.error,
-        isPremium: isPremium ?? this.isPremium,
-      );
-}
+  UserModel? get user => _user;
+  AuthStatus get status => _status;
+  String? get errorMessage => _errorMessage;
+  bool get isLoading => _status == AuthStatus.loading;
+  bool get isAuthenticated => _status == AuthStatus.authenticated;
+  bool get isOfflineMode => _isOfflineMode;
 
-class AuthProvider extends StateNotifier<AuthState> {
-  final AuthService _service;
+  String get userName => _user?.displayName ?? 'Utilisateur';
+  String get userEmail => _user?.userEmail ?? '';
+  String? get userImage => _user?.userImage;
+  bool get isPremium => _user?.isPremium ?? false;
+  fb.User? get firebaseUser => _firebaseUser;
 
-  AuthProvider(this._service) : super(const AuthState()) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAuth());
+  AuthProvider() {
+    _init();
+    _connectivity.addListener(_onConnectivityChanged);
   }
 
-  // ─── CHECK INITIAL ───────────────────────────────────────────────────────
+  void _init() {
+    _checkAuth();
+  }
+
+  void _onConnectivityChanged() {
+    if (_connectivity.isOnline && _user != null) {
+      _syncUserData();
+    }
+    notifyListeners();
+  }
 
   Future<void> _checkAuth() async {
-    debugPrint('🔄 [Auth] _checkAuth started');
-    state = state.copyWith(status: AuthStatus.loading);
+    _status = AuthStatus.loading;
+    notifyListeners();
 
-    if (await _service.isLoggedIn()) {
-      debugPrint('🔑 [Auth] Token found — fetching profile...');
-      try {
-        final user = await _service.getProfile();
-        debugPrint('✅ [Auth] Profile loaded: ${user.toString()}');
-        state = AuthState(
-          status: AuthStatus.authenticated,
-          user: user,
-          isPremium: user.isPremium,
-        );
-      } catch (e, stack) {
-        debugPrint('❌ [Auth] _checkAuth getProfile ERROR: $e');
-        debugPrint('❌ [Auth] StackTrace: $stack');
-        state = const AuthState(status: AuthStatus.unauthenticated);
+    try {
+      final isLoggedIn = await _authService.isLoggedIn();
+
+      if (isLoggedIn) {
+        try {
+          final user = await _authService.getProfile();
+          _user = user;
+          await _db.upsertUser(user);
+          await _secureStorage.saveUser(user);
+          _status = AuthStatus.authenticated;
+          _isOfflineMode = false;
+        } catch (e) {
+          // Mode offline - chercher dans la base locale
+          final userId = await _secureStorage.getUserId();
+          if (userId != null) {
+            final localUser = await _db.getUser(userId);
+            if (localUser != null) {
+              _user = localUser;
+              _status = AuthStatus.authenticated;
+              _isOfflineMode = true;
+            } else {
+              _status = AuthStatus.unauthenticated;
+            }
+          } else {
+            _status = AuthStatus.unauthenticated;
+          }
+        }
+      } else {
+        _status = AuthStatus.unauthenticated;
       }
-    } else {
-      debugPrint('🔓 [Auth] No token found — unauthenticated');
-      state = const AuthState(status: AuthStatus.unauthenticated);
+    } catch (e) {
+      _status = AuthStatus.error;
+      _errorMessage = e.toString();
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> _syncUserData() async {
+    if (_user == null) return;
+    try {
+      await _db.upsertUser(_user!);
+      await _secureStorage.saveUser(_user!);
+    } catch (e) {
+      debugPrint('❌ Erreur sync user: $e');
     }
   }
 
-  // ─── EMAIL / PASSWORD ────────────────────────────────────────────────────
+  Future<bool> signUp({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    _status = AuthStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
 
-  Future<void> login(String email, String password) async {
-    debugPrint('🔄 [Auth] login() called with email: $email');
-    state = state.copyWith(status: AuthStatus.loading);
     try {
-      await _service.login(email: email, password: password);
-      debugPrint('✅ [Auth] login() success — fetching profile...');
-      final user = await _service.getProfile();
-      debugPrint('✅ [Auth] Profile: ${user.toString()}');
-      state = AuthState(
-        status: AuthStatus.authenticated,
-        user: user,
-        isPremium: user.isPremium,
-      );
-    } catch (e, stack) {
-      debugPrint('❌ [Auth] login() ERROR: $e');
-      debugPrint('❌ [Auth] ERROR TYPE: ${e.runtimeType}');
-      debugPrint('❌ [Auth] StackTrace: $stack');
-      state = AuthState(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
-    }
-  }
-
-  Future<void> register(String fullName, String email, String password) async {
-    debugPrint('🔄 [Auth] register() called with email: $email');
-    state = state.copyWith(status: AuthStatus.loading);
-    try {
-      await _service.register(
-        fullName: fullName,
+      final token = await _authService.register(
+        fullName: name,
         email: email,
         password: password,
       );
-      debugPrint('✅ [Auth] register() success — fetching profile...');
-      final user = await _service.getProfile();
-      debugPrint('✅ [Auth] Profile: ${user.toString()}');
-      state = AuthState(
-        status: AuthStatus.authenticated,
-        user: user,
-        isPremium: user.isPremium,
-      );
-    } catch (e, stack) {
-      debugPrint('❌ [Auth] register() ERROR: $e');
-      debugPrint('❌ [Auth] ERROR TYPE: ${e.runtimeType}');
-      debugPrint('❌ [Auth] StackTrace: $stack');
-      state = AuthState(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+
+      final user = await _authService.getProfile();
+      _user = user;
+      await _db.upsertUser(user);
+      await _secureStorage.saveUser(user, password: password);
+      await _secureStorage.saveToken(token.accessToken);
+      await _secureStorage.saveRefreshToken(token.refreshToken);
+      await _secureStorage.saveUserId(user.userId);
+
+      _status = AuthStatus.authenticated;
+      _isOfflineMode = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _status = AuthStatus.error;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
     }
   }
 
-  // ─── SOCIAL LOGIN ───────────────────────────────────────────────────────
+  Future<bool> signIn({required String email, required String password}) async {
+    _status = AuthStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
 
-  Future<void> loginWithGoogle() async {
-    debugPrint('🔄 [Auth] loginWithGoogle() called');
-    state = state.copyWith(status: AuthStatus.loading);
     try {
-      await _service.loginWithGoogle();
-      debugPrint('✅ [Auth] loginWithGoogle() success — fetching profile...');
-      final user = await _service.getProfile();
-      debugPrint('✅ [Auth] Profile: ${user.toString()}');
-      state = AuthState(
-        status: AuthStatus.authenticated,
-        user: user,
-        isPremium: user.isPremium,
-      );
-    } catch (e, stack) {
-      debugPrint('❌ [Auth] loginWithGoogle() ERROR: $e');
-      debugPrint('❌ [Auth] ERROR TYPE: ${e.runtimeType}');
-      debugPrint('❌ [Auth] StackTrace: $stack');
-      state = AuthState(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      // Essayer d'abord en mode offline
+      final localUser = await _db.getUserByEmail(email);
+      if (localUser != null && !_connectivity.isOnline) {
+        final isValid = await _secureStorage.verifyPassword(email, password);
+        if (isValid) {
+          _user = localUser;
+          _status = AuthStatus.authenticated;
+          _isOfflineMode = true;
+          notifyListeners();
+          return true;
+        }
+      }
+
+      // Mode online
+      if (_connectivity.isOnline) {
+        final token =
+            await _authService.login(email: email, password: password);
+        final user = await _authService.getProfile();
+        _user = user;
+        await _db.upsertUser(user);
+        await _secureStorage.saveUser(user, password: password);
+        await _secureStorage.saveToken(token.accessToken);
+        await _secureStorage.saveRefreshToken(token.refreshToken);
+        await _secureStorage.saveUserId(user.userId);
+
+        _status = AuthStatus.authenticated;
+        _isOfflineMode = false;
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = 'Mode hors ligne - Identifiants non trouvés localement';
+        _status = AuthStatus.error;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _status = AuthStatus.error;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
     }
   }
 
-  Future<void> loginWithFacebook() async {
-    debugPrint('🔄 [Auth] loginWithFacebook() called');
-    state = state.copyWith(status: AuthStatus.loading);
+  Future<bool> signInWithGoogle() async {
+    if (!_connectivity.isOnline) {
+      _errorMessage = 'Connexion internet requise pour Google Sign-In';
+      _status = AuthStatus.error;
+      notifyListeners();
+      return false;
+    }
+
+    _status = AuthStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
+
     try {
-      await _service.loginWithFacebook();
-      debugPrint('✅ [Auth] loginWithFacebook() success — fetching profile...');
-      final user = await _service.getProfile();
-      debugPrint('✅ [Auth] Profile: ${user.toString()}');
-      state = AuthState(
-        status: AuthStatus.authenticated,
-        user: user,
-        isPremium: user.isPremium,
-      );
-    } catch (e, stack) {
-      debugPrint('❌ [Auth] loginWithFacebook() ERROR: $e');
-      debugPrint('❌ [Auth] ERROR TYPE: ${e.runtimeType}');
-      debugPrint('❌ [Auth] StackTrace: $stack');
-      state = AuthState(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      final token = await _authService.loginWithGoogle();
+      final user = await _authService.getProfile();
+      _user = user;
+      await _db.upsertUser(user);
+      await _secureStorage.saveUser(user);
+      await _secureStorage.saveToken(token.accessToken);
+      await _secureStorage.saveRefreshToken(token.refreshToken);
+      await _secureStorage.saveUserId(user.userId);
+
+      _status = AuthStatus.authenticated;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _status = AuthStatus.error;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
     }
   }
 
-  // ─── UTILITAIRES ────────────────────────────────────────────────────────
+  Future<bool> signInWithFacebook() async {
+    if (!_connectivity.isOnline) {
+      _errorMessage = 'Connexion internet requise pour Facebook Sign-In';
+      _status = AuthStatus.error;
+      notifyListeners();
+      return false;
+    }
 
-  Future<void> logout() async {
-    debugPrint('🔄 [Auth] logout() called');
-    await _service.logout();
-    debugPrint('✅ [Auth] logout() success');
-    state = const AuthState(status: AuthStatus.unauthenticated);
+    _status = AuthStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final token = await _authService.loginWithFacebook();
+      final user = await _authService.getProfile();
+      _user = user;
+      await _db.upsertUser(user);
+      await _secureStorage.saveUser(user);
+      await _secureStorage.saveToken(token.accessToken);
+      await _secureStorage.saveRefreshToken(token.refreshToken);
+      await _secureStorage.saveUserId(user.userId);
+
+      _status = AuthStatus.authenticated;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _status = AuthStatus.error;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword(String email) async {
+    _status = AuthStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (!_connectivity.isOnline) {
+        _errorMessage = 'Connexion internet requise';
+        _status = AuthStatus.error;
+        notifyListeners();
+        return false;
+      }
+
+      await _authService.resetPassword(email);
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _status = AuthStatus.error;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> signOut() async {
+    _status = AuthStatus.loading;
+    notifyListeners();
+
+    try {
+      await _authService.logout();
+      _user = null;
+      _status = AuthStatus.unauthenticated;
+      _isOfflineMode = false;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _status = AuthStatus.error;
+    }
+
+    notifyListeners();
   }
 
   void clearError() {
-    debugPrint('🧹 [Auth] clearError() called');
-    state = state.copyWith(
-      status: AuthStatus.unauthenticated,
-      error: null,
-    );
+    _errorMessage = null;
+    if (_status == AuthStatus.error) {
+      _status = AuthStatus.unauthenticated;
+    }
+    notifyListeners();
   }
 
-  Future<void> refreshProfile() async {
-    if (state.status != AuthStatus.authenticated) return;
-    debugPrint('🔄 [Auth] refreshProfile() called');
-    try {
-      final user = await _service.getProfile();
-      debugPrint('✅ [Auth] refreshProfile() success');
-      state = state.copyWith(user: user, isPremium: user.isPremium);
-    } catch (e, stack) {
-      debugPrint('❌ [Auth] refreshProfile() ERROR: $e');
-      debugPrint('❌ [Auth] StackTrace: $stack');
-      state = const AuthState(status: AuthStatus.unauthenticated);
-    }
+  @override
+  void dispose() {
+    _connectivity.removeListener(_onConnectivityChanged);
+    super.dispose();
   }
 }
-
-// ─── PROVIDERS ───────────────────────────────────────────────────────────────
-
-final authServiceProvider = Provider((ref) => AuthService());
-
-final authProvider = StateNotifierProvider<AuthProvider, AuthState>(
-  (ref) => AuthProvider(ref.watch(authServiceProvider)),
-);
-
-final currentUserProvider = Provider<UserModel?>(
-  (ref) => ref.watch(authProvider).user,
-);
-
-final isAuthenticatedProvider = Provider<bool>(
-  (ref) => ref.watch(authProvider).status == AuthStatus.authenticated,
-);
-
-final isPremiumProvider = Provider<bool>(
-  (ref) => ref.watch(authProvider).isPremium,
-);
-
-final authStatusProvider = Provider<AuthStatus>(
-  (ref) => ref.watch(authProvider).status,
-);

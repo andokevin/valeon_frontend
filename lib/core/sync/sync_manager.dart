@@ -1,12 +1,11 @@
-// lib/core/sync/sync_manager.dart (MODIFIÉ)
+// lib/core/sync/sync_manager.dart
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../database/database_service.dart';
 import '../network/api_client.dart';
 import '../network/connectivity_service.dart';
 import '../../models/user_model.dart';
-import 'package:http/http.dart' as http;
-import '../../config/app_config.dart';
 import '../../utils/secure_storage.dart';
 
 class SyncManager extends ChangeNotifier {
@@ -44,7 +43,7 @@ class SyncManager extends ChangeNotifier {
   }
 
   void _onConnectivityChanged() {
-    if (_connectivity.isOnline) {
+    if (_connectivity.isOnline && !_isSyncing) {
       _autoSync();
     }
   }
@@ -54,7 +53,7 @@ class SyncManager extends ChangeNotifier {
     await syncAll();
   }
 
-  Future<void> syncAll({User? user}) async {
+  Future<void> syncAll({UserModel? user}) async {
     if (_isSyncing) return;
 
     _isSyncing = true;
@@ -62,22 +61,26 @@ class SyncManager extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Synchroniser les scans
-      await _syncScans();
-      _syncProgress = 25;
-
-      // 2. Synchroniser les favoris
-      await _syncFavorites();
-      _syncProgress = 50;
-
-      // 3. Synchroniser les chats
-      await _syncChats();
-      _syncProgress = 75;
-
-      // 4. Synchroniser l'utilisateur
+      // 1. Synchroniser l'utilisateur
       if (user != null) {
         await _syncUser(user);
+        _syncProgress = 20;
       }
+
+      // 2. Synchroniser les scans
+      await _syncScans();
+      _syncProgress = 40;
+
+      // 3. Synchroniser les favoris
+      await _syncFavorites(user);
+      _syncProgress = 60;
+
+      // 4. Synchroniser les playlists
+      await _syncPlaylists(user);
+      _syncProgress = 80;
+
+      // 5. Synchroniser les chats
+      await _syncChats(user);
       _syncProgress = 100;
 
       _lastSyncError = null;
@@ -85,86 +88,79 @@ class SyncManager extends ChangeNotifier {
       await _secureStorage.saveLastSync(_lastSyncTime!);
     } catch (e) {
       _lastSyncError = e.toString();
+      debugPrint('❌ Erreur sync: $e');
     } finally {
       _isSyncing = false;
       notifyListeners();
     }
   }
 
+  Future<void> _syncUser(UserModel user) async {
+    try {
+      await _api.post('/users/sync', data: user.toJson());
+    } catch (e) {
+      debugPrint('❌ Erreur sync user: $e');
+    }
+  }
+
   Future<void> _syncScans() async {
     final unsynced = await _db.getUnsyncedScans();
-
     for (var scan in unsynced) {
       try {
         if (scan.filePath != null) {
-          var request = http.MultipartRequest(
-            'POST',
-            Uri.parse('${AppConfig.apiBaseUrl}/scans/${scan.type.name}'),
-          );
-          request.files.add(
-            await http.MultipartFile.fromPath('file', scan.filePath!),
-          );
-          request.fields['source'] = scan.inputSource ?? 'file';
-
-          final token = await SecureStorage().getToken();
-          request.headers['Authorization'] = 'Bearer $token';
-
-          final response = await request.send();
-          final responseData = await http.Response.fromStream(response);
-
+          final formData = FormData.fromMap({
+            'file': await MultipartFile.fromFile(scan.filePath!),
+            'source': scan.inputSource,
+          });
+          final response =
+              await _api.uploadFile('/scans/${scan.scanType}', formData);
           if (response.statusCode == 200 || response.statusCode == 202) {
-            await _db.markScanAsSynced(scan.id);
+            await _db.markScanAsSynced(scan.scanId!);
           }
         }
       } catch (e) {
-        print('❌ Erreur sync scan ${scan.id}: $e');
+        debugPrint('❌ Erreur sync scan ${scan.scanId}: $e');
       }
     }
   }
 
-  Future<void> _syncFavorites() async {
-    // Récupérer les favoris non synchronisés
-    final user = await _secureStorage.getUser();
+  Future<void> _syncFavorites(UserModel? user) async {
     if (user == null) return;
 
-    final favorites = await _db.getUserFavorites(user.id);
+    final favorites = await _db.getUserFavorites(user.userId);
     for (var fav in favorites) {
       if (fav['synced'] == 0) {
         try {
-          await _api.post('/library/favorites/${fav['contentId']}');
-          await _db.markFavoriteAsSynced(fav['id']);
+          await _api.post('/library/favorites/${fav['content_id']}');
+          await _db.markFavoriteAsSynced(fav['favorite_id'] as int);
         } catch (e) {
-          print('❌ Erreur sync favori: $e');
+          debugPrint('❌ Erreur sync favori: $e');
         }
       }
     }
   }
 
-  Future<void> _syncChats() async {
-    final user = await _secureStorage.getUser();
+  Future<void> _syncPlaylists(UserModel? user) async {
+    if (user == null) return;
+    // Implémenter la sync des playlists
+  }
+
+  Future<void> _syncChats(UserModel? user) async {
     if (user == null) return;
 
-    final unsyncedMessages = await _db.getUnsyncedMessages(user.id);
+    final unsyncedMessages = await _db.getUnsyncedMessages(user.userId);
     for (var message in unsyncedMessages) {
       try {
         final response = await _api.post(
           '/chat/messages',
-          data: {'userId': user.id, 'message': message.toMap()},
+          data: {'userId': user.userId, 'message': message.toJson()},
         );
-        if (response != null) {
-          await _db.markMessageAsSynced(message.id);
+        if (response.statusCode == 200) {
+          await _db.markMessagesAsSynced(user.userId);
         }
       } catch (e) {
-        print('❌ Erreur sync message: $e');
+        debugPrint('❌ Erreur sync message: $e');
       }
-    }
-  }
-
-  Future<void> _syncUser(User user) async {
-    try {
-      await _api.post('/users/sync', data: user.toMap());
-    } catch (e) {
-      print('❌ Erreur sync user: $e');
     }
   }
 
@@ -179,7 +175,7 @@ class SyncManager extends ChangeNotifier {
       data: data,
     );
 
-    if (_connectivity.isOnline) {
+    if (_connectivity.isOnline && !_isSyncing) {
       _autoSync();
     }
   }

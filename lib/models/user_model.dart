@@ -1,3 +1,4 @@
+// lib/models/user_model.dart
 class UserModel {
   final int userId;
   final String userFullName;
@@ -21,11 +22,12 @@ class UserModel {
     this.createdAt,
   });
 
-  // ✅ Getter de compatibilité — évite de modifier ChatProvider
   int get id => userId;
   String get email => userEmail;
-  // ✅ Getter utiles supplémentaires
-  String get firstName => userFullName.split(' ').first;
+
+  String get displayName =>
+      userFullName.isNotEmpty ? userFullName : userEmail.split('@').first;
+
   String get initials {
     final parts = userFullName.trim().split(' ');
     if (parts.length >= 2) {

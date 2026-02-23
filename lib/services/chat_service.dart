@@ -1,35 +1,39 @@
+// lib/services/chat_service.dart
 import '../models/chat_model.dart';
 import '../core/database/database_service.dart';
 import '../core/network/connectivity_service.dart';
 import '../core/network/api_client.dart';
-import 'package:flutter/foundation.dart';  // debugPrint
+import 'package:flutter/foundation.dart';
 
 class ChatService {
   final DatabaseService _db = DatabaseService();
   final ConnectivityService _connectivity = ConnectivityService();
-  final ApiClient _api = ApiClient.instance;
+  final ApiClient _api = ApiClient();
 
-  Future<ChatConversation> getOrCreateChat(String userId) async {
+  ChatService() {
+    _api.init();
+  }
+
+  Future<ChatConversation> getOrCreateChat(int userId) async {
     final existing = await _db.getLastChat(userId);
     if (existing != null) return existing;
 
     return ChatConversation(
-      id: userId,
-      userId: userId,
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      userId: userId.toString(),
       messages: [
         ChatMessage.assistant(
-          'Bonjour ! Je suis votre assistant Valeon. Posez-moi des questions sur des films, musiques ou séries ! 🎵🎬',
+          'Bonjour ! Je suis votre assistant Valeon. Posez-moi des questions sur des films, musiques ou séries !',
         ),
       ],
       lastMessageAt: DateTime.now(),
     );
   }
 
-  Future<ChatMessage> sendMessage(String userId, String content) async {
+  Future<ChatMessage> sendMessage(int userId, String content) async {
     final userMessage = ChatMessage.user(content);
     final chat = await getOrCreateChat(userId);
 
-    // ✅ copyWith au lieu de muter
     final chatWithUserMsg = chat.copyWith(
       messages: [...chat.messages, userMessage],
       lastMessageAt: DateTime.now(),
@@ -53,11 +57,14 @@ class ChatService {
     return assistantMessage;
   }
 
-  Future<String> _getAIResponse(String query, String userId) async {
+  Future<String> _getAIResponse(String query, int userId) async {
     try {
       final response = await _api.post(
         '/recommendations/chat',
-        data: {'query': query, 'context': {'userId': userId}},
+        data: {
+          'query': query,
+          'context': {'userId': userId}
+        },
       );
       final data = response.data;
       if (data != null && data['recommendations'] != null) {
@@ -65,16 +72,16 @@ class ChatService {
         if (recs.isNotEmpty) {
           var result = 'Voici mes recommandations :\n\n';
           for (final rec in recs.take(5)) {
-            result += '🎯 **${rec['title']}**';
+            result += '🎯 ${rec['title']}';
             if (rec['artist'] != null) {
-              result += ' par *${rec['artist']}*';
+              result += ' par ${rec['artist']}';
             }
             result += '\n${rec['reason'] ?? ''}\n\n';
           }
           return result.trim();
         }
       }
-      return "Je n'ai pas trouvé de recommandations précises pour votre demande. Essayez d'être plus spécifique !";
+      return "Je n'ai pas trouvé de recommandations pour votre demande.";
     } catch (e) {
       debugPrint('❌ API chat error: $e');
       return _getOfflineResponse(query);
@@ -84,22 +91,22 @@ class ChatService {
   String _getOfflineResponse(String query) {
     final lowerQuery = query.toLowerCase();
     if (lowerQuery.contains('film') || lowerQuery.contains('movie')) {
-      return "🔴 **Mode hors ligne**\n\nFilms populaires :\n"
+      return "🔴 Mode hors ligne\n\nFilms populaires :\n"
           "• Inception (Sci-fi)\n"
           "• Interstellar (Sci-fi)\n"
           "• The Dark Knight (Action)\n\n"
-          "Connectez-vous pour des reco personnalisées !";
+          "Connectez-vous pour des recommandations personnalisées !";
     } else if (lowerQuery.contains('musique') || lowerQuery.contains('music')) {
-      return "🔴 **Mode hors ligne**\n\nHits populaires :\n"
+      return "🔴 Mode hors ligne\n\nHits populaires :\n"
           "• Blinding Lights - The Weeknd\n"
           "• Heat Waves - Glass Animals\n"
           "• Sunflower - Post Malone\n\n"
-          "Connectez-vous pour vos reco !";
+          "Connectez-vous pour vos recommandations !";
     }
-    return "🔴 **Hors ligne** — Connectez-vous à Internet pour des recommandations personnalisées.\n\nExplorez votre bibliothèque locale en attendant !";
+    return "🔴 Hors ligne — Connectez-vous à Internet pour des recommandations personnalisées.";
   }
 
-  Future<void> clearHistory(String userId) async {
+  Future<void> clearHistory(int userId) async {
     final chat = await getOrCreateChat(userId);
     final welcomeMsg = ChatMessage.assistant(
       'Historique effacé. Comment puis-je vous aider ?',
@@ -112,9 +119,7 @@ class ChatService {
     await _db.saveChat(clearedChat);
   }
 
-  // ─── SYNCHRONISATION ────────────────────────────────────────────────────
-
-  Future<List<ChatMessage>> getRemoteMessages(String userId) async {
+  Future<List<ChatMessage>> getRemoteMessages(int userId) async {
     try {
       if (!_connectivity.isOnline) return [];
       final response = await _api.get('/chat/history/$userId');
@@ -129,7 +134,7 @@ class ChatService {
     }
   }
 
-  Future<bool> deleteRemoteMessage(String userId, String messageId) async {
+  Future<bool> deleteRemoteMessage(int userId, String messageId) async {
     try {
       if (!_connectivity.isOnline) return false;
       await _api.delete('/chat/message/$messageId');
@@ -140,76 +145,22 @@ class ChatService {
     }
   }
 
-  Future<ChatMessage?> syncMessage(String userId, ChatMessage message) async {
+  Future<ChatMessage?> syncMessage(int userId, ChatMessage message) async {
     try {
       if (!_connectivity.isOnline) return null;
       final response = await _api.post(
         '/chat/messages',
-        data: {
-          'userId': userId,
-          'message': message.toJson(),
-        },
+        data: {'userId': userId, 'message': message.toJson()},
       );
-      final data = response.data;
-      if (data != null) {
-        final chat = await getOrCreateChat(userId);
-        final index = chat.messages.indexWhere((m) => m.id == message.id);
-        if (index != -1) {
-          final syncedMsg = ChatMessage(
-            id: message.id,
-            role: message.role,
-            content: message.content,
-            timestamp: message.timestamp,
-            synced: true,
-          );
-          final updatedChat = chat.copyWith(
-            messages: [
-              for (int i = 0; i < chat.messages.length; i++)
-                i == index ? syncedMsg : chat.messages[i],
-            ],
-          );
-          await _db.saveChat(updatedChat);
-          return syncedMsg;
-        }
+      if (response.statusCode == 200) {
+        final syncedMsg = message.copyWith(synced: true);
+        await _db.markMessagesAsSynced(userId);
+        return syncedMsg;
       }
       return null;
     } catch (e) {
       debugPrint('❌ Erreur sync message: $e');
       return null;
-    }
-  }
-
-  Future<ChatConversation?> getRemoteConversation(String userId) async {
-    try {
-      if (!_connectivity.isOnline) return null;
-      final response = await _api.get('/chat/conversation/$userId');
-      final data = response.data;
-      if (data != null) {
-        return ChatConversation(
-          id: data['id'] ?? userId,
-          userId: userId,
-          messages: (data['messages'] as List<dynamic>? ?? [])
-              .map((m) => ChatMessage.fromJson(m))
-              .toList(),
-          lastMessageAt: DateTime.parse(data['lastMessageAt']),
-          synced: true,
-        );
-      }
-      return null;
-    } catch (e) {
-      debugPrint('❌ Erreur conversation distante: $e');
-      return null;
-    }
-  }
-
-  Future<bool> markMessagesAsRead(String userId) async {
-    try {
-      if (!_connectivity.isOnline) return false;
-      await _api.post('/chat/mark-read/$userId');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Erreur mark-read: $e');
-      return false;
     }
   }
 }

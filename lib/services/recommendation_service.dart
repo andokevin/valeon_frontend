@@ -1,17 +1,30 @@
+// lib/services/recommendation_service.dart
 import 'package:dio/dio.dart';
 import '../core/errors/app_exception.dart';
 import '../core/network/api_client.dart';
+import '../models/content_model.dart';
 
 class RecommendationService {
-  final _api = ApiClient.instance;
+  final ApiClient _api = ApiClient();
 
-  Future<List<Map<String, dynamic>>> getPersonalized({String? contentType}) async {
+  RecommendationService() {
+    _api.init();
+  }
+
+  Future<List<ContentModel>> getPersonalized({String? contentType}) async {
     try {
-      final res = await _api.get('/recommendations/personalized',
-          params: {'limit': 20, if (contentType != null) 'content_type': contentType});
-      final data = res.data;
+      final response = await _api.get(
+        '/recommendations/personalized',
+        params: {
+          'limit': 20,
+          if (contentType != null) 'content_type': contentType
+        },
+      );
+      final data = response.data;
       if (data is Map && data['recommendations'] != null) {
-        return List<Map<String, dynamic>>.from(data['recommendations']);
+        return (data['recommendations'] as List)
+            .map((j) => ContentModel.fromJson(j))
+            .toList();
       }
       return [];
     } on DioException catch (e) {
@@ -19,17 +32,30 @@ class RecommendationService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getTrending({
+  Future<List<ContentModel>> getTrending({
     String timeRange = 'week',
     String? contentType,
   }) async {
     try {
-      final res = await _api.get('/recommendations/trending', params: {
+      final response = await _api.get('/recommendations/trending', params: {
         'time_range': timeRange,
         'limit': 20,
         if (contentType != null) 'content_type': contentType,
       });
-      return List<Map<String, dynamic>>.from(res.data);
+      return (response.data as List)
+          .map((j) => ContentModel.fromJson(j))
+          .toList();
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
+    }
+  }
+
+  Future<List<ContentModel>> getSimilar(int contentId, {int limit = 10}) async {
+    try {
+      final response = await _api.get('/recommendations/similar/$contentId');
+      return (response.data as List)
+          .map((j) => ContentModel.fromJson(j))
+          .toList();
     } on DioException catch (e) {
       throw AppException.fromDio(e);
     }

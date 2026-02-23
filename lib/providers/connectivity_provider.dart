@@ -29,12 +29,12 @@ class ConnectivityProvider extends ChangeNotifier {
     _isOnline = _connectivityService.isOnline;
 
     if (wasOnline != _isOnline) {
-      print('📡 ConnectivityProvider: ${_isOnline ? 'ONLINE' : 'OFFLINE'}');
+      debugPrint(
+          '📡 ConnectivityProvider: ${_isOnline ? 'ONLINE' : 'OFFLINE'}');
       notifyListeners();
     }
   }
 
-  // ✅ MÉTHODE CORRIGÉE - Utilise checkConnectivity() qui est public
   Future<void> checkConnection() async {
     await _connectivityService.checkConnectivity();
   }

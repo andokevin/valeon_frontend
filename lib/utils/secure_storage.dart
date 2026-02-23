@@ -1,4 +1,4 @@
-// lib/utils/secure_storage.dart (MODIFIÉ)
+// lib/utils/secure_storage.dart
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import '../models/user_model.dart';
@@ -16,6 +16,7 @@ class SecureStorage {
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'refresh_token';
   static const String _userKey = 'user_data';
+  static const String _userIdKey = 'user_id';
   static const String _passwordHashKey = 'password_hash_';
   static const String _settingsKey = 'app_settings';
   static const String _lastSyncKey = 'last_sync';
@@ -42,23 +43,34 @@ class SecureStorage {
     await _storage.delete(key: _refreshTokenKey);
   }
 
+  // ===== USER ID =====
+  Future<void> saveUserId(int userId) async {
+    await _storage.write(key: _userIdKey, value: userId.toString());
+  }
+
+  Future<int?> getUserId() async {
+    final value = await _storage.read(key: _userIdKey);
+    return value != null ? int.tryParse(value) : null;
+  }
+
   // ===== UTILISATEUR =====
-  Future<void> saveUser(User user, {String? password}) async {
-    await _storage.write(key: _userKey, value: jsonEncode(user.toMap()));
+  Future<void> saveUser(UserModel user, {String? password}) async {
+    await _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
+    await saveUserId(user.userId);
 
     if (password != null) {
-      final hash = _simpleHash('${user.email}:$password');
-      await _storage.write(key: '$_passwordHashKey${user.id}', value: hash);
+      final hash = _simpleHash('${user.userEmail}:$password');
+      await _storage.write(key: '$_passwordHashKey${user.userId}', value: hash);
     }
   }
 
-  Future<User?> getUser() async {
+  Future<UserModel?> getUser() async {
     final data = await _storage.read(key: _userKey);
     if (data == null) return null;
 
     try {
       final map = jsonDecode(data);
-      return User.fromMap(map);
+      return UserModel.fromJson(map);
     } catch (e) {
       return null;
     }
@@ -68,7 +80,8 @@ class SecureStorage {
     final user = await getUser();
     if (user == null) return false;
 
-    final storedHash = await _storage.read(key: '$_passwordHashKey${user.id}');
+    final storedHash =
+        await _storage.read(key: '$_passwordHashKey${user.userId}');
     if (storedHash == null) return false;
 
     final computedHash = _simpleHash('$email:$password');
@@ -102,7 +115,6 @@ class SecureStorage {
   Future<Map<String, dynamic>?> getSettings() async {
     final data = await _storage.read(key: _settingsKey);
     if (data == null) return null;
-
     try {
       return jsonDecode(data);
     } catch (e) {

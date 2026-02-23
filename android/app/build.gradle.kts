@@ -30,6 +30,16 @@ android {
     //     }
     // }
 
+    // ✅ AJOUT DE LA CONFIGURATION DE SIGNATURE
+    signingConfigs {
+        release {
+            storeFile file('../keystore/votre-cle-release.jks')  // Chemin relatif
+            storePassword 'valeon'
+            keyAlias 'votre_alias'
+            keyPassword 'valeon'
+        }
+    }
+
     defaultConfig {
         applicationId = "com.app.valeon"
         minSdk = flutter.minSdkVersion  // ⚠️ Important : minimum 21 pour le desugaring
@@ -40,8 +50,21 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            signingConfig = signingConfigs.getByName("debug")
+            // ✅ MODIFICATION ICI : Utiliser la signature release au lieu de debug
+            signingConfig = signingConfigs.release
+            
+            // ✅ Optimisations pour la release (optionnel mais recommandé)
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        
+        // ✅ Optionnel : Garder debug pour le développement
+        debug {
+            signingConfig = signingConfigs.debug
         }
     }
 }

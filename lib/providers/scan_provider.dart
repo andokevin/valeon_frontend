@@ -1,63 +1,142 @@
+// lib/providers/scan_provider.dart
 import 'dart:io';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
 import '../models/scan_model.dart';
+import '../models/user_model.dart';
 import '../services/scan_service.dart';
+import '../core/database/database_service.dart';
+import '../core/network/connectivity_service.dart';
+import '../utils/secure_storage.dart';
 
 enum ScanPhase { idle, uploading, processing, done, error }
 
-class ScanState {
-  final ScanPhase phase;
-  final int? scanId;
-  final ScanModel? result;
-  final String? error;
-  final double uploadProgress;
-  const ScanState({
-    this.phase = ScanPhase.idle,
-    this.scanId,
-    this.result,
-    this.error,
-    this.uploadProgress = 0,
-  });
-  ScanState copyWith({ScanPhase? phase, int? scanId, ScanModel? result,
-      String? error, double? uploadProgress}) =>
-      ScanState(
-        phase: phase ?? this.phase,
-        scanId: scanId ?? this.scanId,
-        result: result ?? this.result,
-        error: error ?? this.error,
-        uploadProgress: uploadProgress ?? this.uploadProgress,
-      );
-}
+class ScanProvider extends ChangeNotifier {
+  final ScanService _service = ScanService();
+  final DatabaseService _db = DatabaseService();
+  final ConnectivityService _connectivity = ConnectivityService();
+  final SecureStorage _secureStorage = SecureStorage();
 
-class ScanNotifier extends StateNotifier<ScanState> {
-  final ScanService _service;
-  ScanNotifier(this._service) : super(const ScanState());
+  ScanPhase _phase = ScanPhase.idle;
+  int? _currentScanId;
+  ScanModel? _result;
+  String? _errorMessage;
+  double _uploadProgress = 0;
+  List<ScanModel> _history = [];
 
-  Future<void> scanAudio(File file) => _scan(() => _service.scanAudio(file));
-  Future<void> scanImage(File file) => _scan(() => _service.scanImage(file));
-  Future<void> scanVideo(File file) => _scan(() => _service.scanVideo(file));
+  ScanPhase get phase => _phase;
+  int? get currentScanId => _currentScanId;
+  ScanModel? get result => _result;
+  String? get errorMessage => _errorMessage;
+  double get uploadProgress => _uploadProgress;
+  List<ScanModel> get history => _history;
+  bool get isLoading => _phase != ScanPhase.idle && _phase != ScanPhase.done;
 
-  Future<void> _scan(Future<Map<String, dynamic>> Function() uploadFn) async {
-    state = const ScanState(phase: ScanPhase.uploading, uploadProgress: 0);
+  Future<void> loadHistory(UserModel user) async {
     try {
-      final uploadData = await uploadFn();
-      final scanId = uploadData['scan_id'];
-      state = state.copyWith(phase: ScanPhase.processing, scanId: scanId, uploadProgress: 1.0);
-      final result = await _service.pollScanResult(scanId);
-      if (result.status == ScanStatus.failed) {
-        state = state.copyWith(phase: ScanPhase.error, error: result.error ?? 'Scan échoué');
-      } else {
-        state = state.copyWith(phase: ScanPhase.done, result: result);
-      }
+      _history = await _db.getUserScans(user.userId);
+      notifyListeners();
     } catch (e) {
-      state = state.copyWith(phase: ScanPhase.error, error: e.toString());
+      debugPrint('❌ Erreur chargement historique: $e');
     }
   }
 
-  void reset() => state = const ScanState();
-}
+  Future<void> scanAudio(File file, UserModel user) async {
+    await _scan(() => _service.scanAudio(file), ScanType.audio, file, user);
+  }
 
-final scanServiceProvider = Provider((_) => ScanService());
-final scanProvider = StateNotifierProvider<ScanNotifier, ScanState>(
-  (ref) => ScanNotifier(ref.watch(scanServiceProvider)),
-);
+  Future<void> scanImage(File file, UserModel user) async {
+    await _scan(() => _service.scanImage(file), ScanType.image, file, user);
+  }
+
+  Future<void> scanVideo(File file, UserModel user) async {
+    await _scan(() => _service.scanVideo(file), ScanType.video, file, user);
+  }
+
+  Future<void> _scan(
+    Future<Map<String, dynamic>> Function() scanFn,
+    ScanType type,
+    File file,
+    UserModel user,
+  ) async {
+    _phase = ScanPhase.uploading;
+    _uploadProgress = 0;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Créer un scan local
+      final localScan = ScanModel(
+        scanType: type,
+        inputSource: 'file',
+        status: ScanStatus.pending,
+        scanDate: DateTime.now(),
+        scanUser: user.userId,
+        filePath: file.path,
+      );
+
+      await _db.insertScan(localScan);
+      _history.insert(0, localScan);
+      notifyListeners();
+
+      if (_connectivity.isOnline) {
+        // Envoyer à l'API
+        final uploadData = await scanFn();
+        _currentScanId = uploadData['scan_id'];
+
+        _phase = ScanPhase.processing;
+        notifyListeners();
+
+        // Poll pour le résultat
+        final scanResult = await _service.pollScanResult(_currentScanId!);
+        _result = scanResult;
+
+        if (scanResult.status == ScanStatus.failed) {
+          _phase = ScanPhase.error;
+          _errorMessage = scanResult.error ?? 'Scan échoué';
+        } else {
+          _phase = ScanPhase.done;
+          // Mettre à jour le scan local
+          await _db.insertScan(scanResult);
+        }
+      } else {
+        // Mode offline
+        _phase = ScanPhase.done;
+        _result = localScan;
+      }
+    } catch (e) {
+      _phase = ScanPhase.error;
+      _errorMessage = e.toString();
+    }
+
+    notifyListeners();
+  }
+
+  Future<ScanModel?> getScanById(int scanId) async {
+    try {
+      if (_connectivity.isOnline) {
+        final remote = await _service.getScanResult(scanId);
+        return remote;
+      } else {
+        // Chercher dans l'historique local
+        return _history.firstWhere((s) => s.scanId == scanId);
+      }
+    } catch (e) {
+      debugPrint('❌ Erreur récupération scan: $e');
+      return null;
+    }
+  }
+
+  void reset() {
+    _phase = ScanPhase.idle;
+    _currentScanId = null;
+    _result = null;
+    _errorMessage = null;
+    _uploadProgress = 0;
+    notifyListeners();
+  }
+
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+}

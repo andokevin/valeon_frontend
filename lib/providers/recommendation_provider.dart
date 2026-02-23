@@ -2,13 +2,12 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/content_model.dart';
-import '../core/network/api_client.dart';
+import '../services/recommendation_service.dart';
 import '../core/database/database_service.dart';
 import '../core/network/connectivity_service.dart';
-import '../config/app_config.dart';
 
 class RecommendationProvider extends ChangeNotifier {
-  final ApiClient _api = ApiClient();
+  final RecommendationService _service = RecommendationService();
   final DatabaseService _db = DatabaseService();
   final ConnectivityService _connectivity = ConnectivityService();
 
@@ -24,78 +23,59 @@ class RecommendationProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  Future<void> loadRecommendations(User user) async {
+  Future<void> loadRecommendations(UserModel user) async {
     _isLoading = true;
     notifyListeners();
 
     try {
       if (_connectivity.isOnline) {
-        // Charger depuis l'API
         await Future.wait([
           _loadPersonalized(user),
           _loadTrending(),
           _loadForYou(user),
         ]);
       } else {
-        // Mode offline - charger depuis SQLite
         await _loadOfflineRecommendations(user);
       }
     } catch (e) {
       _errorMessage = e.toString();
+      debugPrint('❌ Erreur chargement recommandations: $e');
     }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  Future<void> _loadPersonalized(User user) async {
+  Future<void> _loadPersonalized(UserModel user) async {
     try {
-      final response = await _api.get(
-        '/recommendations/personalized',
-        params: {'limit': AppConfig.maxRecommendations.toString()},
-      );
-
-      if (response != null && response['recommendations'] != null) {
-        _personalized = (response['recommendations'] as List)
-            .map((r) => ContentModel.fromJson(r))
-            .toList();
-      }
+      _personalized = await _service.getPersonalized();
     } catch (e) {
-      print('❌ Erreur load personalized: $e');
+      debugPrint('❌ Erreur load personalized: $e');
     }
   }
 
   Future<void> _loadTrending() async {
     try {
-      final response = await _api.get('/recommendations/trending');
-
-      if (response != null) {
-        _trending = (response as List)
-            .map((r) => ContentModel.fromJson(r))
-            .toList();
-      }
+      _trending = await _service.getTrending();
     } catch (e) {
-      print('❌ Erreur load trending: $e');
+      debugPrint('❌ Erreur load trending: $e');
     }
   }
 
-  Future<void> _loadForYou(User user) async {
+  Future<void> _loadForYou(UserModel user) async {
     try {
-      final response = await _api.get('/recommendations/for-you');
-
-      if (response != null && response['recommendations'] != null) {
-        _forYou = (response['recommendations'] as List)
-            .map((r) => ContentModel.fromJson(r))
-            .toList();
-      }
+      // Mix de personalized et trending
+      _forYou = [..._personalized, ..._trending];
+      _forYou.shuffle();
+      _forYou = _forYou.take(10).toList();
     } catch (e) {
-      print('❌ Erreur load for you: $e');
+      debugPrint('❌ Erreur load for you: $e');
     }
   }
 
-  Future<void> _loadOfflineRecommendations(User user) async {
-    // En mode offline, utiliser les favoris et l'historique
-    final scans = await _db.getUserScans(user.id);
+  Future<void> _loadOfflineRecommendations(UserModel user) async {
+    // En mode offline, utiliser l'historique et les favoris
+    final scans = await _db.getUserScans(user.userId);
     final recentTypes = <String, int>{};
 
     for (var scan in scans) {
@@ -105,12 +85,10 @@ class RecommendationProvider extends ChangeNotifier {
       }
     }
 
-    // Recommandations basées sur les types les plus scannés
     final preferredType = recentTypes.entries.isNotEmpty
         ? recentTypes.entries.reduce((a, b) => a.value > b.value ? a : b).key
         : 'music';
 
-    // Simuler des recommandations
     _personalized = _getMockRecommendations(preferredType, 5);
     _trending = _getMockRecommendations('trending', 5);
     _forYou = _getMockRecommendations('mixed', 10);
@@ -119,30 +97,42 @@ class RecommendationProvider extends ChangeNotifier {
   List<ContentModel> _getMockRecommendations(String type, int count) {
     final mockData = [
       ContentModel(
-        id: '1',
-        title: 'Inception',
-        artist: 'Christopher Nolan',
-        year: '2010',
-        genre: 'Science-fiction',
-        description: 'Un voleur qui s\'infiltre dans les rêves.',
-        imageUrl: '',
-        type: ContentType.film,
-        scannedAt: DateTime.now(),
+        contentId: 1,
+        contentType: 'movie',
+        contentTitle: 'Inception',
+        contentArtist: 'Christopher Nolan',
+        contentReleaseDate: '2010',
+        contentDescription: 'Un voleur qui s\'infiltre dans les rêves.',
+        contentImage: '',
       ),
       ContentModel(
-        id: '2',
-        title: 'Blinding Lights',
-        artist: 'The Weeknd',
-        year: '2019',
-        genre: 'Synth-pop',
-        description: 'Chanson populaire de The Weeknd.',
-        imageUrl: '',
-        type: ContentType.music,
-        scannedAt: DateTime.now(),
+        contentId: 2,
+        contentType: 'music',
+        contentTitle: 'Blinding Lights',
+        contentArtist: 'The Weeknd',
+        contentReleaseDate: '2019',
+        contentDescription: 'Chanson populaire de The Weeknd.',
+        contentImage: '',
       ),
-      // Ajouter plus de données mock...
+      ContentModel(
+        contentId: 3,
+        contentType: 'movie',
+        contentTitle: 'Interstellar',
+        contentArtist: 'Christopher Nolan',
+        contentReleaseDate: '2014',
+        contentDescription: 'Un voyage à travers les étoiles.',
+        contentImage: '',
+      ),
+      ContentModel(
+        contentId: 4,
+        contentType: 'music',
+        contentTitle: 'Heat Waves',
+        contentArtist: 'Glass Animals',
+        contentReleaseDate: '2020',
+        contentDescription: 'Chanson populaire du groupe Glass Animals.',
+        contentImage: '',
+      ),
     ];
-
     return mockData.take(count).toList();
   }
 

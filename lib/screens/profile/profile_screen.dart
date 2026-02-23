@@ -1,130 +1,490 @@
+// lib/screens/profile/profile_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../../core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import 'package:valeon/providers/connectivity_provider.dart';
+import '../../config/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/sync_provider.dart';
+import '../../widgets/layout/space_background.dart';
+import '../../widgets/layout/offline_banner.dart';
+import 'settings_screen.dart';
+import 'premium_screen.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider);
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          // Avatar
-          Center(
-            child: Stack(children: [
-              CircleAvatar(
-                radius: 48,
-                backgroundColor: AppTheme.primary.withOpacity(0.15),
-                child: Text(
-                  user?.userFullName.isNotEmpty == true
-                      ? user!.userFullName[0].toUpperCase() : 'V',
-                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w700,
-                    color: AppTheme.primary),
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final hPadding = ResponsiveHelper.paddingScreen(context);
+    final auth = Provider.of<AuthProvider>(context);
+    final connectivity = Provider.of<ConnectivityProvider>(context);
+    final syncProvider = Provider.of<SyncProvider>(context);
+
+    return SpaceBackground(
+      child: SafeArea(
+        child: Column(
+          children: [
+            if (!connectivity.isOnline) const OfflineBanner(),
+            _buildHeader(context, hPadding, isTablet),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(hPadding),
+                child: Column(
+                  children: [
+                    _buildProfileHeader(context, auth, isTablet),
+                    const SizedBox(height: 24),
+                    _buildStats(context, isTablet),
+                    const SizedBox(height: 24),
+                    _buildSubscriptionCard(context, auth, isTablet),
+                    const SizedBox(height: 24),
+                    _buildSyncInfo(context, syncProvider, isTablet),
+                    const SizedBox(height: 24),
+                    _buildMenuItems(context, isTablet),
+                    const SizedBox(height: 24),
+                    _buildLogoutButton(context),
+                  ],
                 ),
               ),
-              if (user?.isPremium == true)
-                Positioned(bottom: 0, right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: AppTheme.premium, shape: BoxShape.circle),
-                    child: const Icon(Icons.star_rounded, color: Colors.black, size: 14),
-                  )),
-            ]),
-          ),
-          const SizedBox(height: 16),
-          Center(child: Text(user?.userFullName ?? '',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700,
-              color: AppTheme.onBackground))),
-          Center(child: Text(user?.userEmail ?? '',
-            style: const TextStyle(color: AppTheme.onSurface))),
-          const SizedBox(height: 8),
-          Center(child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, double hPadding, bool isTablet) {
+    return Padding(
+      padding: EdgeInsets.all(hPadding),
+      child: Row(
+        children: [
+          Container(
+            width: isTablet ? 52 : 44,
+            height: isTablet ? 52 : 44,
             decoration: BoxDecoration(
-              color: (user?.isPremium == true ? AppTheme.premium : AppTheme.primary).withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
+              gradient: const LinearGradient(
+                colors: [AppColors.primaryBlue, AppColors.lightPurple],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(
-              user?.isPremium == true ? '⭐ Premium' : '${user?.subscription ?? 'Free'}',
+            child: const Icon(Icons.person, color: Colors.white),
+          ),
+          SizedBox(width: isTablet ? 16 : 12),
+          const Text(
+            'Profil',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+            icon: const Icon(Icons.settings, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(
+      BuildContext context, AuthProvider auth, bool isTablet) {
+    final avatarSize = isTablet ? 100.0 : 80.0;
+    final isEmailVerified = auth.firebaseUser?.emailVerified ?? false;
+
+    return Column(
+      children: [
+        Stack(
+          children: [
+            Container(
+              width: avatarSize,
+              height: avatarSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [AppColors.primaryBlue, AppColors.lightPurple],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(color: Colors.white, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryBlue.withOpacity(0.4),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: auth.userImage != null && auth.userImage!.isNotEmpty
+                  ? ClipOval(
+                      child: Image.network(
+                        auth.userImage!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.person, color: Colors.white);
+                        },
+                      ),
+                    )
+                  : const Icon(Icons.person, color: Colors.white),
+            ),
+            if (auth.isPremium)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: AppColors.premium,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.star,
+                    color: Colors.black,
+                    size: 16,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              auth.userName,
               style: TextStyle(
-                color: user?.isPremium == true ? AppTheme.premium : AppTheme.primary,
-                fontWeight: FontWeight.w600),
-            ),
-          )),
-          const SizedBox(height: 32),
-          if (user?.isPremium != true) ...[
-            ElevatedButton.icon(
-              onPressed: () => context.go('/premium'),
-              icon: const Icon(Icons.star_rounded, color: Colors.black),
-              label: const Text('Passer à Premium',
-                style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.premium,
-                minimumSize: const Size(double.infinity, 52),
+                fontSize: isTablet ? 24 : 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
-            const SizedBox(height: 16),
+            if (isEmailVerified) ...[
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.verified,
+                color: AppColors.primaryBlue,
+                size: 20,
+              ),
+            ],
           ],
-          _SettingsTile(
-            icon: Icons.library_music_rounded,
-            label: 'Ma bibliothèque',
-            onTap: () => context.go('/library'),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          auth.userEmail,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.white70,
           ),
-          _SettingsTile(
-            icon: Icons.notifications_rounded,
-            label: 'Notifications',
-            onTap: () {},
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStats(BuildContext context, bool isTablet) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem('150', 'Scans', isTablet),
+          _buildStatItem('24', 'Favoris', isTablet),
+          _buildStatItem('3', 'Playlists', isTablet),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String value, String label, bool isTablet) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: isTablet ? 24 : 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
-          _SettingsTile(
-            icon: Icons.help_outline_rounded,
-            label: 'Aide & Support',
-            onTap: () {},
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            color: Colors.white70,
           ),
-          _SettingsTile(
-            icon: Icons.privacy_tip_rounded,
-            label: 'Confidentialité',
-            onTap: () {},
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubscriptionCard(
+      BuildContext context, AuthProvider auth, bool isTablet) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: auth.isPremium
+              ? [AppColors.premium, AppColors.premium.withOpacity(0.7)]
+              : [AppColors.primaryBlue, AppColors.lightPurple],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: (auth.isPremium ? AppColors.premium : AppColors.primaryBlue)
+                .withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: () async {
-              await ref.read(authProvider.notifier).logout();
-            },
-            icon: const Icon(Icons.logout_rounded, color: AppTheme.error),
-            label: const Text('Se déconnecter',
-              style: TextStyle(color: AppTheme.error)),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppTheme.error),
-              minimumSize: const Size(double.infinity, 52),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            auth.isPremium ? Icons.star : Icons.person,
+            color: Colors.white,
+            size: isTablet ? 40 : 32,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  auth.isPremium ? 'Valeon Premium' : 'Plan Free',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isTablet ? 18 : 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  auth.isPremium
+                      ? 'Scans illimités, sans pub, IA avancée'
+                      : '5 scans/jour, 50 scans/mois',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: isTablet ? 14 : 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!auth.isPremium)
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const PremiumScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.primaryBlue,
+              ),
+              child: const Text('Upgrade'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSyncInfo(
+      BuildContext context, SyncProvider sync, bool isTablet) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            sync.isSyncing ? Icons.sync : Icons.sync,
+            color: sync.isSyncing ? Colors.orange : Colors.green,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sync.isSyncing ? 'Synchronisation...' : 'Synchronisé',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  sync.syncStatusMessage,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: sync.isSyncing ? null : () => sync.triggerSync(),
+            child: Text(
+              sync.isSyncing ? 'En cours' : 'Sync',
+              style: const TextStyle(color: AppColors.primaryBlue),
             ),
           ),
         ],
       ),
     );
   }
-}
 
-class _SettingsTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  const _SettingsTile({required this.icon, required this.label, required this.onTap});
+  Widget _buildMenuItems(BuildContext context, bool isTablet) {
+    return Column(
+      children: [
+        _buildMenuItem(
+          icon: Icons.notifications,
+          label: 'Notifications',
+          onTap: () {},
+        ),
+        const SizedBox(height: 8),
+        _buildMenuItem(
+          icon: Icons.help,
+          label: 'Aide & Support',
+          onTap: () {},
+        ),
+        const SizedBox(height: 8),
+        _buildMenuItem(
+          icon: Icons.privacy_tip,
+          label: 'Confidentialité',
+          onTap: () {},
+        ),
+        const SizedBox(height: 8),
+        _buildMenuItem(
+          icon: Icons.info,
+          label: 'À propos',
+          onTap: () {},
+        ),
+      ],
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) => ListTile(
-    onTap: onTap,
-    leading: Icon(icon, color: AppTheme.primary),
-    title: Text(label, style: const TextStyle(color: AppTheme.onBackground)),
-    trailing: const Icon(Icons.chevron_right_rounded, color: AppTheme.onSurface),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-  );
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.primaryBlue),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white54,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            title: const Text(
+              'Déconnexion',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: const Text(
+              'Voulez-vous vraiment vous déconnecter ?',
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                ),
+                child: const Text('Déconnexion'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirm == true) {
+          final auth = Provider.of<AuthProvider>(context, listen: false);
+          await auth.signOut();
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red.withOpacity(0.3)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.logout, color: Colors.red),
+            SizedBox(width: 12),
+            Text(
+              'Se déconnecter',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

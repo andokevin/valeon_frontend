@@ -1,5 +1,6 @@
+// lib/widgets/home/scan_action_card.dart
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import '../../config/app_theme.dart';
 
 class ScanActionCard extends StatelessWidget {
   final IconData icon;
@@ -7,6 +8,7 @@ class ScanActionCard extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
   final bool isPremiumOnly;
+  final bool isPremium;
 
   const ScanActionCard({
     super.key,
@@ -15,39 +17,70 @@ class ScanActionCard extends StatelessWidget {
     required this.color,
     required this.onTap,
     this.isPremiumOnly = false,
+    this.isPremium = false,
   });
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+  Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: isTablet ? 32 : 28,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isTablet ? 15 : 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            if (isPremiumOnly && !isPremium)
+              Positioned(
+                top: -4,
+                right: -4,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: AppColors.premium,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.star,
+                    color: Colors.black,
+                    size: 14,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
-      child: Column(children: [
-        Stack(children: [
-          Container(
-            width: 48, height: 48,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 26),
-          ),
-          if (isPremiumOnly)
-            Positioned(top: -2, right: -2,
-              child: Container(
-                width: 18, height: 18,
-                decoration: const BoxDecoration(
-                  color: AppTheme.premium, shape: BoxShape.circle),
-                child: const Icon(Icons.star_rounded, size: 12, color: Colors.black),
-              )),
-        ]),
-        const SizedBox(height: 10),
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-          color: AppTheme.onBackground)),
-      ]),
-    ),
-  );
+    );
+  }
 }

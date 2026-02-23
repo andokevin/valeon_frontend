@@ -18,13 +18,12 @@ class ConnectivityService extends ChangeNotifier {
       final result = await _connectivity.checkConnectivity();
       _updateConnectionStatus(result);
     } catch (e) {
-      print('❌ Erreur vérification connexion: $e');
+      debugPrint('❌ Erreur vérification connexion: $e');
       _isOnline = false;
       notifyListeners();
     }
   }
 
-  // ✅ MÉTHODE PUBLIQUE POUR VÉRIFIER LA CONNEXION
   Future<void> checkConnectivity() async {
     await _initConnectivity();
   }
@@ -34,17 +33,8 @@ class ConnectivityService extends ChangeNotifier {
     _isOnline = result.isNotEmpty && result.first != ConnectivityResult.none;
 
     if (wasOnline != _isOnline) {
-      print('📡 Connexion: ${_isOnline ? 'ONLINE' : 'OFFLINE'}');
+      debugPrint('📡 Connexion: ${_isOnline ? 'ONLINE' : 'OFFLINE'}');
       notifyListeners();
-
-      if (_isOnline) {
-        // Déclencher synchronisation automatique
-        _triggerSync();
-      }
     }
-  }
-
-  void _triggerSync() {
-    // TODO: Notifier le SyncManager
   }
 }
