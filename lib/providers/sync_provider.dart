@@ -1,25 +1,22 @@
 // lib/providers/sync_provider.dart
 import 'package:flutter/material.dart';
-import '../core/sync/sync_manager.dart';
-import '../models/user_model.dart';
+import 'package:valeon/models/user_model.dart';
 
+// Provider vide car la synchronisation hors ligne a été supprimée
 class SyncProvider extends ChangeNotifier {
-  final SyncManager _syncManager = SyncManager();
-
-  bool get isSyncing => _syncManager.isSyncing;
-  int get syncProgress => _syncManager.syncProgress;
-  String? get lastSyncError => _syncManager.lastSyncError;
-  DateTime? get lastSyncTime => _syncManager.lastSyncTime;
-  String get syncStatusMessage => _syncManager.syncStatusMessage;
+  bool get isSyncing => false;
+  int get syncProgress => 0;
+  String? get lastSyncError => null;
+  DateTime? get lastSyncTime => null;
+  String get syncStatusMessage => 'Synchronisation désactivée';
 
   Future<void> syncAll({UserModel? user}) async {
-    await _syncManager.syncAll(user: user);
+    // Ne fait rien car la synchronisation hors ligne a été supprimée
+    debugPrint('ℹ️ La synchronisation hors ligne a été supprimée');
     notifyListeners();
   }
 
   void triggerSync() {
-    if (!_syncManager.isSyncing) {
-      syncAll();
-    }
+    // Ne fait rien
   }
 }

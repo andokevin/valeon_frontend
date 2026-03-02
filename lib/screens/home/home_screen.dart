@@ -1,4 +1,4 @@
-// lib/screens/home/home_screen.dart
+// lib/screens/home/home_screen.dart (SANS _buildQuickScanButtons)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:valeon/models/content_model.dart';
@@ -6,15 +6,14 @@ import '../../config/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/recommendation_provider.dart';
 import '../../providers/connectivity_provider.dart';
-import '../../providers/sync_provider.dart';
 import '../../widgets/home/scan_action_card.dart';
 import '../../widgets/home/trending_section.dart';
 import '../../widgets/home/recommendation_section.dart';
 import '../../widgets/layout/space_background.dart';
-import '../../widgets/layout/offline_banner.dart';
 import '../search/search_screen.dart';
 import '../chat/chat_screen.dart';
 import '../scan/scan_result_screen.dart';
+import '../../services/recommendation_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -26,23 +25,48 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List<ContentModel> _recommendations = [];
+  bool _loadingRecommendations = false;
+
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+      _loadAdditionalRecommendations();
+    });
   }
 
   Future<void> _loadData() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final recs = Provider.of<RecommendationProvider>(context, listen: false);
-    final syncProvider = Provider.of<SyncProvider>(context, listen: false);
 
     if (auth.user != null) {
       await recs.loadRecommendations(auth.user!);
+    }
+  }
 
-      // Déclencher la synchronisation si connecté
-      if (!syncProvider.isSyncing) {
-        syncProvider.syncAll(user: auth.user);
+  Future<void> _loadAdditionalRecommendations() async {
+    setState(() {
+      _loadingRecommendations = true;
+    });
+
+    try {
+      final recService = RecommendationService();
+      final recommendations = await recService.getPersonalized(limit: 10);
+
+      if (mounted) {
+        setState(() {
+          _recommendations = recommendations;
+          _loadingRecommendations = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Erreur chargement recommandations supplémentaires: $e');
+      if (mounted) {
+        setState(() {
+          _loadingRecommendations = false;
+        });
       }
     }
   }
@@ -59,20 +83,17 @@ class _HomeScreenState extends State<HomeScreen> {
       child: SafeArea(
         child: Column(
           children: [
-            // Bannière hors ligne
-            if (!connectivity.isOnline) const OfflineBanner(),
-
-            // Header
-            _buildHeader(context, hPadding, auth),
-
+            _buildHeader(context, hPadding, auth, connectivity),
             Expanded(
               child: recs.isLoading
                   ? const Center(
                       child: CircularProgressIndicator(
                           color: AppColors.primaryBlue))
-                  : recs.errorMessage != null
-                      ? _buildErrorView(context)
-                      : _buildContent(context, recs, auth, isTablet),
+                  : recs.errorMessage != null && !connectivity.isOnline
+                      ? _buildOfflineView()
+                      : recs.errorMessage != null
+                          ? _buildErrorView(context)
+                          : _buildContent(context, recs, auth, isTablet),
             ),
           ],
         ),
@@ -80,15 +101,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHeader(
-      BuildContext context, double hPadding, AuthProvider auth) {
+  Widget _buildHeader(BuildContext context, double hPadding, AuthProvider auth,
+      ConnectivityProvider connectivity) {
     final isTablet = ResponsiveHelper.isTablet(context);
 
     return Padding(
       padding: EdgeInsets.all(hPadding),
       child: Row(
         children: [
-          // Logo
           Container(
             width: isTablet ? 52 : 44,
             height: isTablet ? 52 : 44,
@@ -113,8 +133,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           SizedBox(width: isTablet ? 16 : 12),
-
-          // Titre
           const Text(
             'Valeon',
             style: TextStyle(
@@ -124,10 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
               letterSpacing: 1,
             ),
           ),
-
           const Spacer(),
-
-          // Bouton premium si pas premium
           if (!auth.isPremium)
             Container(
               margin: const EdgeInsets.only(right: 8),
@@ -142,17 +157,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.star, size: 16),
-                    SizedBox(width: 4),
-                    Text('Premium', style: TextStyle(fontSize: 12)),
-                  ],
-                ),
+                child: const Text('Premium'),
               ),
             ),
-
-          // Bouton chat IA
           IconButton(
             onPressed: () {
               Navigator.push(
@@ -165,8 +172,6 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.white,
             ),
           ),
-
-          // Bouton recherche
           IconButton(
             onPressed: () {
               Navigator.push(
@@ -178,6 +183,44 @@ class _HomeScreenState extends State<HomeScreen> {
               Icons.search,
               color: Colors.white,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfflineView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.wifi_off,
+            size: 64,
+            color: Colors.orange,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Pas de connexion internet',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Connectez-vous pour découvrir du contenu',
+            style: TextStyle(color: Colors.white70),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              Provider.of<ConnectivityProvider>(context, listen: false)
+                  .checkConnection();
+            },
+            child: const Text('Vérifier la connexion'),
           ),
         ],
       ),
@@ -230,44 +273,54 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Message de bienvenue
           _buildWelcomeMessage(context, auth.userName, isTablet),
-
           const SizedBox(height: 20),
-
-          // Barre de recherche rapide
           _buildSearchBar(context),
-
           const SizedBox(height: 32),
 
-          // Boutons de scan rapide
-          _buildQuickScanButtons(context, auth.isPremium),
-
-          const SizedBox(height: 32),
-
-          // Section Tendances
+          // ===== SECTION TENDANCES =====
           if (recs.trending.isNotEmpty) ...[
             _buildSectionHeader(context, 'Tendances', () {
               // Voir tout
             }),
             const SizedBox(height: 16),
             TrendingSection(trending: recs.trending),
+            const SizedBox(height: 32),
           ],
 
-          const SizedBox(height: 32),
-
-          // Section Recommandations
+          // ===== SECTION RECOMMANDÉ POUR VOUS =====
           if (recs.personalized.isNotEmpty) ...[
             _buildSectionHeader(context, 'Recommandé pour vous', () {
               // Voir tout
             }),
             const SizedBox(height: 16),
             RecommendationSection(recommendations: recs.personalized),
+            const SizedBox(height: 32),
           ],
 
-          const SizedBox(height: 32),
+          // ===== SECTION RECOMMANDATIONS SUPPLÉMENTAIRES =====
+          if (!_loadingRecommendations && _recommendations.isNotEmpty) ...[
+            _buildSectionHeader(context, 'Découvrez aussi', () {
+              // Voir tout
+            }),
+            const SizedBox(height: 16),
+            ..._recommendations.take(3).map((item) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildForYouItem(context, item, isTablet),
+              );
+            }),
+            const SizedBox(height: 32),
+          ] else if (_loadingRecommendations) ...[
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(color: AppColors.primaryBlue),
+              ),
+            ),
+          ],
 
-          // Section Pour vous
+          // ===== SECTION POUR VOUS (si existe) =====
           if (recs.forYou.isNotEmpty) ...[
             _buildSectionHeader(context, 'Pour vous', () {
               // Voir tout
@@ -350,74 +403,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildQuickScanButtons(BuildContext context, bool isPremium) {
-    final isTablet = ResponsiveHelper.isTablet(context);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        ScanActionCard(
-          icon: Icons.mic,
-          label: 'Audio',
-          color: AppColors.primaryBlue,
-          onTap: () {
-            if (widget.onNavigate != null) {
-              widget.onNavigate!(1);
-            } else {
-              Navigator.pushNamed(context, '/scan/audio');
-            }
-          },
-        ),
-        const SizedBox(width: 12),
-        ScanActionCard(
-          icon: Icons.image,
-          label: 'Image',
-          color: const Color(0xFF9B59B6),
-          onTap: () {
-            if (widget.onNavigate != null) {
-              widget.onNavigate!(1);
-            } else {
-              Navigator.pushNamed(context, '/scan/image');
-            }
-          },
-        ),
-        const SizedBox(width: 12),
-        ScanActionCard(
-          icon: Icons.videocam,
-          label: 'Vidéo',
-          color: const Color(0xFF2ECC71),
-          isPremiumOnly: true,
-          isPremium: isPremium,
-          onTap: () {
-            if (isPremium) {
-              if (widget.onNavigate != null) {
-                widget.onNavigate!(1);
-              } else {
-                Navigator.pushNamed(context, '/scan/video');
-              }
-            } else {
-              Navigator.pushNamed(context, '/premium');
-            }
-          },
-        ),
-      ],
-    );
-  }
-
   Widget _buildSectionHeader(
     BuildContext context,
     String title,
     VoidCallback onSeeAll,
   ) {
-    final isTablet = ResponsiveHelper.isTablet(context);
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
           style: TextStyle(
-            fontSize: isTablet ? 24 : 20,
+            fontSize: ResponsiveHelper.isTablet(context) ? 24 : 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),

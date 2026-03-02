@@ -1,6 +1,5 @@
 // lib/widgets/layout/custom_bottom_nav.dart
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 import '../../config/app_theme.dart';
 
 class CustomBottomNav extends StatelessWidget {
@@ -34,12 +33,14 @@ class CustomBottomNav extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(
+            context: context, // ✅ Passer le contexte en paramètre
             index: 0,
             icon: Icons.home,
             label: 'Accueil',
             isTablet: isTablet,
           ),
           _buildNavItem(
+            context: context, // ✅ Passer le contexte en paramètre
             index: 1,
             icon: Icons.qr_code_scanner,
             label: 'Scan',
@@ -47,12 +48,14 @@ class CustomBottomNav extends StatelessWidget {
             isTablet: isTablet,
           ),
           _buildNavItem(
+            context: context, // ✅ Passer le contexte en paramètre
             index: 2,
             icon: Icons.library_music,
             label: 'Bibliothèque',
             isTablet: isTablet,
           ),
           _buildNavItem(
+            context: context, // ✅ Passer le contexte en paramètre
             index: 3,
             icon: Icons.person,
             label: 'Profil',
@@ -64,17 +67,18 @@ class CustomBottomNav extends StatelessWidget {
   }
 
   Widget _buildNavItem({
+    required BuildContext context, // ✅ Ajouter context comme paramètre requis
     required int index,
     required IconData icon,
     required String label,
-    bool isCenter = false,
     required bool isTablet,
+    bool isCenter = false,
   }) {
     final isSelected = currentIndex == index;
+    // ✅ Maintenant context est défini et accessible
     final centerButtonSize =
-        ResponsiveHelper.bottomNavCenterButtonSize(context as BuildContext);
-    final iconSize =
-        ResponsiveHelper.bottomNavIconSize(context as BuildContext);
+        ResponsiveHelper.bottomNavCenterButtonSize(context);
+    final iconSize = ResponsiveHelper.bottomNavIconSize(context);
 
     return Expanded(
       child: GestureDetector(

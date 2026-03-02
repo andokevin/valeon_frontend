@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
-import '../core/database/database_service.dart';
 import '../core/network/connectivity_service.dart';
 import '../utils/secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
@@ -11,7 +10,6 @@ enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
-  final DatabaseService _db = DatabaseService();
   final ConnectivityService _connectivity = ConnectivityService();
   final SecureStorage _secureStorage = SecureStorage();
 
@@ -19,14 +17,12 @@ class AuthProvider extends ChangeNotifier {
   fb.User? _firebaseUser;
   AuthStatus _status = AuthStatus.initial;
   String? _errorMessage;
-  bool _isOfflineMode = false;
 
   UserModel? get user => _user;
   AuthStatus get status => _status;
   String? get errorMessage => _errorMessage;
   bool get isLoading => _status == AuthStatus.loading;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
-  bool get isOfflineMode => _isOfflineMode;
 
   String get userName => _user?.displayName ?? 'Utilisateur';
   String get userEmail => _user?.userEmail ?? '';
@@ -36,18 +32,10 @@ class AuthProvider extends ChangeNotifier {
 
   AuthProvider() {
     _init();
-    _connectivity.addListener(_onConnectivityChanged);
   }
 
   void _init() {
     _checkAuth();
-  }
-
-  void _onConnectivityChanged() {
-    if (_connectivity.isOnline && _user != null) {
-      _syncUserData();
-    }
-    notifyListeners();
   }
 
   Future<void> _checkAuth() async {
@@ -61,25 +49,10 @@ class AuthProvider extends ChangeNotifier {
         try {
           final user = await _authService.getProfile();
           _user = user;
-          await _db.upsertUser(user);
           await _secureStorage.saveUser(user);
           _status = AuthStatus.authenticated;
-          _isOfflineMode = false;
         } catch (e) {
-          // Mode offline - chercher dans la base locale
-          final userId = await _secureStorage.getUserId();
-          if (userId != null) {
-            final localUser = await _db.getUser(userId);
-            if (localUser != null) {
-              _user = localUser;
-              _status = AuthStatus.authenticated;
-              _isOfflineMode = true;
-            } else {
-              _status = AuthStatus.unauthenticated;
-            }
-          } else {
-            _status = AuthStatus.unauthenticated;
-          }
+          _status = AuthStatus.unauthenticated;
         }
       } else {
         _status = AuthStatus.unauthenticated;
@@ -90,16 +63,6 @@ class AuthProvider extends ChangeNotifier {
     }
 
     notifyListeners();
-  }
-
-  Future<void> _syncUserData() async {
-    if (_user == null) return;
-    try {
-      await _db.upsertUser(_user!);
-      await _secureStorage.saveUser(_user!);
-    } catch (e) {
-      debugPrint('❌ Erreur sync user: $e');
-    }
   }
 
   Future<bool> signUp({
@@ -120,14 +83,12 @@ class AuthProvider extends ChangeNotifier {
 
       final user = await _authService.getProfile();
       _user = user;
-      await _db.upsertUser(user);
-      await _secureStorage.saveUser(user, password: password);
+      await _secureStorage.saveUser(user);
       await _secureStorage.saveToken(token.accessToken);
       await _secureStorage.saveRefreshToken(token.refreshToken);
       await _secureStorage.saveUserId(user.userId);
 
       _status = AuthStatus.authenticated;
-      _isOfflineMode = false;
       notifyListeners();
       return true;
     } catch (e) {
@@ -144,41 +105,24 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Essayer d'abord en mode offline
-      final localUser = await _db.getUserByEmail(email);
-      if (localUser != null && !_connectivity.isOnline) {
-        final isValid = await _secureStorage.verifyPassword(email, password);
-        if (isValid) {
-          _user = localUser;
-          _status = AuthStatus.authenticated;
-          _isOfflineMode = true;
-          notifyListeners();
-          return true;
-        }
-      }
-
-      // Mode online
-      if (_connectivity.isOnline) {
-        final token =
-            await _authService.login(email: email, password: password);
-        final user = await _authService.getProfile();
-        _user = user;
-        await _db.upsertUser(user);
-        await _secureStorage.saveUser(user, password: password);
-        await _secureStorage.saveToken(token.accessToken);
-        await _secureStorage.saveRefreshToken(token.refreshToken);
-        await _secureStorage.saveUserId(user.userId);
-
-        _status = AuthStatus.authenticated;
-        _isOfflineMode = false;
-        notifyListeners();
-        return true;
-      } else {
-        _errorMessage = 'Mode hors ligne - Identifiants non trouvés localement';
+      if (!_connectivity.isOnline) {
+        _errorMessage = 'Connexion internet requise';
         _status = AuthStatus.error;
         notifyListeners();
         return false;
       }
+
+      final token = await _authService.login(email: email, password: password);
+      final user = await _authService.getProfile();
+      _user = user;
+      await _secureStorage.saveUser(user);
+      await _secureStorage.saveToken(token.accessToken);
+      await _secureStorage.saveRefreshToken(token.refreshToken);
+      await _secureStorage.saveUserId(user.userId);
+
+      _status = AuthStatus.authenticated;
+      notifyListeners();
+      return true;
     } catch (e) {
       _status = AuthStatus.error;
       _errorMessage = e.toString();
@@ -203,7 +147,6 @@ class AuthProvider extends ChangeNotifier {
       final token = await _authService.loginWithGoogle();
       final user = await _authService.getProfile();
       _user = user;
-      await _db.upsertUser(user);
       await _secureStorage.saveUser(user);
       await _secureStorage.saveToken(token.accessToken);
       await _secureStorage.saveRefreshToken(token.refreshToken);
@@ -236,7 +179,6 @@ class AuthProvider extends ChangeNotifier {
       final token = await _authService.loginWithFacebook();
       final user = await _authService.getProfile();
       _user = user;
-      await _db.upsertUser(user);
       await _secureStorage.saveUser(user);
       await _secureStorage.saveToken(token.accessToken);
       await _secureStorage.saveRefreshToken(token.refreshToken);
@@ -286,7 +228,6 @@ class AuthProvider extends ChangeNotifier {
       await _authService.logout();
       _user = null;
       _status = AuthStatus.unauthenticated;
-      _isOfflineMode = false;
     } catch (e) {
       _errorMessage = e.toString();
       _status = AuthStatus.error;
@@ -301,11 +242,5 @@ class AuthProvider extends ChangeNotifier {
       _status = AuthStatus.unauthenticated;
     }
     notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _connectivity.removeListener(_onConnectivityChanged);
-    super.dispose();
   }
 }

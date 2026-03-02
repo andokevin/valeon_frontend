@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../models/scan_model.dart';
 import '../models/user_model.dart';
 import '../services/scan_service.dart';
-import '../core/database/database_service.dart';
 import '../core/network/connectivity_service.dart';
 import '../utils/secure_storage.dart';
 
@@ -12,7 +11,6 @@ enum ScanPhase { idle, uploading, processing, done, error }
 
 class ScanProvider extends ChangeNotifier {
   final ScanService _service = ScanService();
-  final DatabaseService _db = DatabaseService();
   final ConnectivityService _connectivity = ConnectivityService();
   final SecureStorage _secureStorage = SecureStorage();
 
@@ -33,7 +31,11 @@ class ScanProvider extends ChangeNotifier {
 
   Future<void> loadHistory(UserModel user) async {
     try {
-      _history = await _db.getUserScans(user.userId);
+      if (!_connectivity.isOnline) {
+        debugPrint('❌ Pas de connexion pour charger l\'historique');
+        return;
+      }
+      _history = await _service.getHistory();
       notifyListeners();
     } catch (e) {
       debugPrint('❌ Erreur chargement historique: $e');
@@ -41,21 +43,20 @@ class ScanProvider extends ChangeNotifier {
   }
 
   Future<void> scanAudio(File file, UserModel user) async {
-    await _scan(() => _service.scanAudio(file), ScanType.audio, file, user);
+    await _scan(() => _service.scanAudio(file), ScanType.audio, user);
   }
 
   Future<void> scanImage(File file, UserModel user) async {
-    await _scan(() => _service.scanImage(file), ScanType.image, file, user);
+    await _scan(() => _service.scanImage(file), ScanType.image, user);
   }
 
   Future<void> scanVideo(File file, UserModel user) async {
-    await _scan(() => _service.scanVideo(file), ScanType.video, file, user);
+    await _scan(() => _service.scanVideo(file), ScanType.video, user);
   }
 
   Future<void> _scan(
     Future<Map<String, dynamic>> Function() scanFn,
     ScanType type,
-    File file,
     UserModel user,
   ) async {
     _phase = ScanPhase.uploading;
@@ -64,44 +65,27 @@ class ScanProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Créer un scan local
-      final localScan = ScanModel(
-        scanType: type,
-        inputSource: 'file',
-        status: ScanStatus.pending,
-        scanDate: DateTime.now(),
-        scanUser: user.userId,
-        filePath: file.path,
-      );
+      if (!_connectivity.isOnline) {
+        throw Exception('Connexion internet requise pour scanner');
+      }
 
-      await _db.insertScan(localScan);
-      _history.insert(0, localScan);
+      // Envoyer à l'API
+      final uploadData = await scanFn();
+      _currentScanId = uploadData['scan_id'];
+
+      _phase = ScanPhase.processing;
       notifyListeners();
 
-      if (_connectivity.isOnline) {
-        // Envoyer à l'API
-        final uploadData = await scanFn();
-        _currentScanId = uploadData['scan_id'];
+      // Poll pour le résultat
+      final scanResult = await _service.pollScanResult(_currentScanId!);
+      _result = scanResult;
 
-        _phase = ScanPhase.processing;
-        notifyListeners();
-
-        // Poll pour le résultat
-        final scanResult = await _service.pollScanResult(_currentScanId!);
-        _result = scanResult;
-
-        if (scanResult.status == ScanStatus.failed) {
-          _phase = ScanPhase.error;
-          _errorMessage = scanResult.error ?? 'Scan échoué';
-        } else {
-          _phase = ScanPhase.done;
-          // Mettre à jour le scan local
-          await _db.insertScan(scanResult);
-        }
+      if (scanResult.status == ScanStatus.failed) {
+        _phase = ScanPhase.error;
+        _errorMessage = scanResult.error ?? 'Scan échoué';
       } else {
-        // Mode offline
         _phase = ScanPhase.done;
-        _result = localScan;
+        _history.insert(0, scanResult);
       }
     } catch (e) {
       _phase = ScanPhase.error;
@@ -113,13 +97,10 @@ class ScanProvider extends ChangeNotifier {
 
   Future<ScanModel?> getScanById(int scanId) async {
     try {
-      if (_connectivity.isOnline) {
-        final remote = await _service.getScanResult(scanId);
-        return remote;
-      } else {
-        // Chercher dans l'historique local
-        return _history.firstWhere((s) => s.scanId == scanId);
+      if (!_connectivity.isOnline) {
+        throw Exception('Connexion internet requise');
       }
+      return await _service.getScanResult(scanId);
     } catch (e) {
       debugPrint('❌ Erreur récupération scan: $e');
       return null;

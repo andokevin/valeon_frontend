@@ -1,4 +1,4 @@
-// lib/core/network/api_client.dart
+// lib/core/network/api_client.dart (CORRIGÉ - avec params)
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../../config/app_config.dart';
@@ -111,23 +111,24 @@ class ApiClient {
     _pendingRequests.clear();
   }
 
+  // ===== MODIFICATION: Utilisation de 'params' au lieu de 'queryParameters' =====
   Future<Response> get(String path, {Map<String, dynamic>? params}) {
     return dio.get(path, queryParameters: params);
   }
 
-  Future<Response> post(String path, {dynamic data}) {
-    return dio.post(path, data: data);
+  Future<Response> post(String path, {dynamic data, Map<String, dynamic>? params}) {
+    return dio.post(path, data: data, queryParameters: params);
   }
 
-  Future<Response> put(String path, {dynamic data}) {
-    return dio.put(path, data: data);
+  Future<Response> put(String path, {dynamic data, Map<String, dynamic>? params}) {
+    return dio.put(path, data: data, queryParameters: params);
   }
 
-  Future<Response> delete(String path) {
-    return dio.delete(path);
+  Future<Response> delete(String path, {Map<String, dynamic>? params}) {
+    return dio.delete(path, queryParameters: params);
   }
 
-  Future<Response> uploadFile(String path, FormData data) {
-    return dio.post(path, data: data);
+  Future<Response> uploadFile(String path, FormData data, {Map<String, dynamic>? params}) {
+    return dio.post(path, data: data, queryParameters: params);
   }
 }

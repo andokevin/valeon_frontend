@@ -2,10 +2,7 @@
 import 'package:flutter/material.dart';
 
 class OfflineBanner extends StatelessWidget {
-  final VoidCallback? onRetry;
-  final bool showRetry;
-
-  const OfflineBanner({super.key, this.onRetry, this.showRetry = true});
+  const OfflineBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,13 +10,13 @@ class OfflineBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       color: Colors.orange,
-      child: Row(
+      child: const Row(
         children: [
-          const Icon(Icons.wifi_off, color: Colors.white, size: 18),
-          const SizedBox(width: 12),
-          const Expanded(
+          Icon(Icons.wifi_off, color: Colors.white, size: 18),
+          SizedBox(width: 12),
+          Expanded(
             child: Text(
-              'Mode hors ligne',
+              'Mode hors ligne - Fonctionnalités limitées',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -27,20 +24,6 @@ class OfflineBanner extends StatelessWidget {
               ),
             ),
           ),
-          if (onRetry != null && showRetry)
-            TextButton(
-              onPressed: onRetry,
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.orange,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: const Text('Réessayer'),
-            ),
         ],
       ),
     );

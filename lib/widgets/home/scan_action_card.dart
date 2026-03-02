@@ -7,8 +7,8 @@ class ScanActionCard extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
-  final bool isPremiumOnly;
-  final bool isPremium;
+  final bool isPremiumOnly;  // ← Ce flag existe déjà
+  final bool isPremium;      // ← Et celui-ci aussi
 
   const ScanActionCard({
     super.key,
@@ -25,7 +25,7 @@ class ScanActionCard extends StatelessWidget {
     final isTablet = ResponsiveHelper.isTablet(context);
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap,  // ← Le onTap est passé depuis home_screen.dart
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
@@ -61,6 +61,7 @@ class ScanActionCard extends StatelessWidget {
                 ),
               ],
             ),
+            // L'étoile Premium reste un indicateur visuel, pas un bloqueur
             if (isPremiumOnly && !isPremium)
               Positioned(
                 top: -4,

@@ -1,6 +1,4 @@
 // lib/models/content_model.dart
-import 'dart:convert';
-
 class ContentModel {
   final int contentId;
   final String contentType;
@@ -69,33 +67,6 @@ class ContentModel {
     );
   }
 
-  factory ContentModel.fromDbMap(Map<String, dynamic> map) {
-    return ContentModel(
-      contentId: map['content_id'] ?? 0,
-      contentType: map['content_type'] ?? 'unknown',
-      contentTitle: map['content_title'] ?? '',
-      contentOriginalTitle: map['content_original_title'],
-      contentDescription: map['content_description'],
-      contentArtist: map['content_artist'],
-      contentDirector: map['content_director'],
-      contentCast: map['content_cast'] != null
-          ? List<String>.from(jsonDecode(map['content_cast']))
-          : null,
-      contentImage: map['content_image'],
-      contentBackdrop: map['content_backdrop'],
-      contentReleaseDate: map['content_release_date'],
-      contentDuration: map['content_duration'],
-      contentRating: map['content_rating']?.toDouble(),
-      contentUrl: map['content_url'],
-      spotifyId: map['spotify_id'],
-      tmdbId: map['tmdb_id'],
-      youtubeId: map['youtube_id'],
-      metadata: map['content_metadata'] != null
-          ? jsonDecode(map['content_metadata']) as Map<String, dynamic>
-          : null,
-    );
-  }
-
   Map<String, dynamic> toJson() => {
         'content_id': contentId,
         'content_type': contentType,
@@ -115,28 +86,6 @@ class ContentModel {
         'tmdb_id': tmdbId,
         'youtube_id': youtubeId,
         'metadata': metadata,
-      };
-
-  Map<String, dynamic> toDbMap() => {
-        'content_id': contentId,
-        'content_type': contentType,
-        'content_title': contentTitle,
-        'content_original_title': contentOriginalTitle,
-        'content_description': contentDescription,
-        'content_artist': contentArtist,
-        'content_director': contentDirector,
-        'content_cast': contentCast != null ? jsonEncode(contentCast) : null,
-        'content_image': contentImage,
-        'content_backdrop': contentBackdrop,
-        'content_release_date': contentReleaseDate,
-        'content_duration': contentDuration,
-        'content_rating': contentRating,
-        'content_url': contentUrl,
-        'spotify_id': spotifyId,
-        'tmdb_id': tmdbId,
-        'youtube_id': youtubeId,
-        'content_metadata': metadata != null ? jsonEncode(metadata) : null,
-        'content_date': DateTime.now().toIso8601String(),
       };
 
   String get typeLabel {

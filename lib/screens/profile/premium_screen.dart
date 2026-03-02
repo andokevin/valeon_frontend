@@ -1,4 +1,4 @@
-// lib/screens/profile/premium_screen.dart
+// lib/screens/profile/premium_screen.dart (CORRIGÉ - sans débordement)
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../widgets/layout/space_background.dart';
@@ -22,13 +22,13 @@ class PremiumScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     _buildPremiumHeader(isTablet),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 20),
                     _buildFeatureList(),
-                    const SizedBox(height: 32),
-                    _buildPricingCards(context, isTablet),
                     const SizedBox(height: 24),
+                    _buildPricingCards(context, isTablet),
+                    const SizedBox(height: 16),
                     _buildGuarantee(),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
@@ -46,14 +46,14 @@ class PremiumScreen extends StatelessWidget {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
           ),
           const Expanded(
             child: Text(
               'Premium',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -67,52 +67,54 @@ class PremiumScreen extends StatelessWidget {
 
   Widget _buildPremiumHeader(bool isTablet) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [AppColors.premium, Color(0xFFFFD700)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: AppColors.premium.withOpacity(0.3),
-            blurRadius: 20,
-            spreadRadius: 5,
+            blurRadius: 15,
+            spreadRadius: 2,
           ),
         ],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.star,
-              size: isTablet ? 64 : 48,
+              size: isTablet ? 40 : 32,
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           const Text(
             'Valeon Premium',
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           const Text(
             'Libérez tout le potentiel de Valeon',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 13,
               color: Colors.white70,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -151,17 +153,19 @@ class PremiumScreen extends StatelessWidget {
     return Column(
       children: features.map((feature) {
         return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.premium.withOpacity(0.3)),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: AppColors.premium.withOpacity(0.2),
                   shape: BoxShape.circle,
@@ -169,9 +173,10 @@ class PremiumScreen extends StatelessWidget {
                 child: Icon(
                   feature['icon'] as IconData,
                   color: AppColors.premium,
+                  size: 18,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,16 +185,16 @@ class PremiumScreen extends StatelessWidget {
                       feature['title'] as String,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       feature['description'] as String,
                       style: const TextStyle(
                         color: Colors.white70,
-                        fontSize: 13,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -213,10 +218,10 @@ class PremiumScreen extends StatelessWidget {
           onTap: () => _showPaywall(context),
           isTablet: isTablet,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         _buildPricingCard(
           title: 'Annuel',
-          price: '79,99€',
+          price: '19,99€', // ← CORRIGÉ : prix annuel correct
           period: '/an',
           isPopular: true,
           badge: 'Économisez 33%',
@@ -239,7 +244,8 @@ class PremiumScreen extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           gradient: isPopular
               ? LinearGradient(
@@ -250,7 +256,7 @@ class PremiumScreen extends StatelessWidget {
                 )
               : null,
           color: isPopular ? null : Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
                 isPopular ? AppColors.premium : Colors.white.withOpacity(0.2),
@@ -258,23 +264,24 @@ class PremiumScreen extends StatelessWidget {
           ),
         ),
         child: Stack(
+          clipBehavior: Clip.none,
           children: [
             if (badge != null)
               Positioned(
-                top: -8,
-                right: 16,
+                top: -10,
+                right: 10,
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppColors.premium,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     badge,
                     style: const TextStyle(
                       color: Colors.black,
-                      fontSize: 11,
+                      fontSize: 9,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -283,18 +290,13 @@ class PremiumScreen extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 Column(
@@ -304,7 +306,7 @@ class PremiumScreen extends StatelessWidget {
                       price,
                       style: TextStyle(
                         color: isPopular ? AppColors.premium : Colors.white,
-                        fontSize: isTablet ? 24 : 20,
+                        fontSize: isTablet ? 18 : 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -312,7 +314,7 @@ class PremiumScreen extends StatelessWidget {
                       period,
                       style: const TextStyle(
                         color: Colors.white70,
-                        fontSize: 13,
+                        fontSize: 11,
                       ),
                     ),
                   ],
@@ -326,19 +328,27 @@ class PremiumScreen extends StatelessWidget {
   }
 
   Widget _buildGuarantee() {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.security, color: Colors.green, size: 20),
-        SizedBox(width: 8),
-        Text(
-          'Paiement sécurisé • Annulation à tout moment',
-          style: TextStyle(
-            color: Colors.white70,
-            fontSize: 12,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.security, color: Colors.green, size: 14),
+          SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              'Paiement sécurisé • Annulation à tout moment',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 10,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -349,16 +359,16 @@ class PremiumScreen extends StatelessWidget {
         backgroundColor: AppColors.surface,
         title: const Text(
           'Paiement',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontSize: 16),
         ),
         content: const Text(
           'L\'intégration du paiement (Stripe/RevenueCat) est à configurer.',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: Colors.white70, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
+            child: const Text('Fermer', style: TextStyle(fontSize: 13)),
           ),
         ],
       ),

@@ -6,15 +6,13 @@ import '../models/favorite_model.dart';
 import '../models/playlist_model.dart';
 import '../models/scan_model.dart';
 import '../services/library_service.dart';
-import '../core/database/database_service.dart';
+import '../services/scan_service.dart';
 import '../core/network/connectivity_service.dart';
-import '../core/sync/sync_manager.dart';
 
 class LibraryProvider extends ChangeNotifier {
   final LibraryService _service = LibraryService();
-  final DatabaseService _db = DatabaseService();
+  final ScanService _scanService = ScanService();
   final ConnectivityService _connectivity = ConnectivityService();
-  final SyncManager _syncManager = SyncManager();
 
   List<FavoriteModel> _favorites = [];
   List<ScanModel> _history = [];
@@ -35,19 +33,16 @@ class LibraryProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Charger depuis la base locale d'abord
-      final favs = await _db.getUserFavorites(user.userId);
-      _favorites = favs.map((f) => FavoriteModel.fromJson(f)).toList();
-
-      _history = await _db.getUserScans(user.userId);
-
-      // Si connecté, synchroniser avec le serveur
       if (_connectivity.isOnline) {
         await Future.wait([
-          _syncFavorites(user),
-          _syncHistory(user),
+          _loadFavorites(),
+          _loadHistory(),
+          _loadPlaylists(user),
           _loadStats(),
         ]);
+      } else {
+        _errorMessage =
+            'Connexion internet requise pour charger la bibliothèque';
       }
     } catch (e) {
       _errorMessage = e.toString();
@@ -58,33 +53,30 @@ class LibraryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _syncFavorites(UserModel user) async {
+  Future<void> _loadFavorites() async {
     try {
-      final remoteFavs = await _service.getFavorites();
-      for (var fav in remoteFavs) {
-        final exists = _favorites.any((f) => f.contentId == fav.contentId);
-        if (!exists) {
-          _favorites.add(fav);
-          await _db.insertFavorite(user.userId, fav.toContent());
-        }
-      }
+      _favorites = await _service.getFavorites();
+      debugPrint('✅ Favoris chargés: ${_favorites.length} éléments');
     } catch (e) {
-      debugPrint('❌ Erreur sync favoris: $e');
+      debugPrint('❌ Erreur chargement favoris: $e');
     }
   }
 
-  Future<void> _syncHistory(UserModel user) async {
+  Future<void> _loadHistory() async {
     try {
-      final remoteHistory = await _service.getHistory();
-      for (var scan in remoteHistory) {
-        final exists = _history.any((s) => s.scanId == scan.scanId);
-        if (!exists && scan.scanId != null) {
-          _history.add(scan);
-          await _db.insertScan(scan);
-        }
-      }
+      _history = await _service.getHistory();
+      debugPrint('✅ Historique chargé: ${_history.length} éléments');
     } catch (e) {
-      debugPrint('❌ Erreur sync historique: $e');
+      debugPrint('❌ Erreur chargement historique: $e');
+    }
+  }
+
+  Future<void> _loadPlaylists(UserModel user) async {
+    try {
+      _playlists = await _service.getPlaylists();
+      debugPrint('✅ Playlists chargées: ${_playlists.length} éléments');
+    } catch (e) {
+      debugPrint('❌ Erreur chargement playlists: $e');
     }
   }
 
@@ -92,37 +84,27 @@ class LibraryProvider extends ChangeNotifier {
     try {
       final statsData = await _service.getStats();
       _stats = statsData.cast<String, int>();
+      debugPrint('✅ Stats chargées: $_stats');
     } catch (e) {
       debugPrint('❌ Erreur chargement stats: $e');
     }
   }
 
+  // ===== FAVORIS =====
   Future<void> addToFavorites(ContentModel content, UserModel user) async {
     try {
-      await _db.insertFavorite(user.userId, content);
-      _favorites.insert(
-          0,
-          FavoriteModel(
-            favoriteId: DateTime.now().millisecondsSinceEpoch,
-            contentId: content.contentId,
-            contentTitle: content.contentTitle,
-            contentType: content.contentType,
-            contentImage: content.contentImage,
-            contentArtist: content.contentArtist,
-            createdAt: DateTime.now(),
-          ));
-
-      if (_connectivity.isOnline) {
-        await _service.addFavorite(content.contentId);
-      } else {
-        await _syncManager.addToQueue(
-          operation: 'INSERT',
-          tableName: 'favorites',
-          data: {'userId': user.userId, 'contentId': content.contentId},
-        );
+      if (!_connectivity.isOnline) {
+        _errorMessage = 'Connexion internet requise';
+        notifyListeners();
+        return;
       }
 
+      debugPrint('➕ Ajout aux favoris: ${content.contentTitle} (ID: ${content.contentId})');
+      await _service.addFavorite(content.contentId);
+      await _loadFavorites(); // Recharger la liste
+      await _loadStats();
       notifyListeners();
+      debugPrint('✅ Ajouté aux favoris avec succès');
     } catch (e) {
       _errorMessage = e.toString();
       debugPrint('❌ Erreur ajout favori: $e');
@@ -131,24 +113,18 @@ class LibraryProvider extends ChangeNotifier {
 
   Future<void> removeFromFavorites(int contentId, UserModel user) async {
     try {
-      _favorites.removeWhere((f) => f.contentId == contentId);
-
-      // Trouver l'ID du favori local
-      final localFav = await _db.getUserFavorites(user.userId);
-      final fav = localFav.firstWhere((f) => f['content_id'] == contentId);
-      await _db.deleteFavorite(fav['favorite_id'] as int);
-
-      if (_connectivity.isOnline) {
-        await _service.removeFavorite(contentId);
-      } else {
-        await _syncManager.addToQueue(
-          operation: 'DELETE',
-          tableName: 'favorites',
-          data: {'contentId': contentId, 'userId': user.userId},
-        );
+      if (!_connectivity.isOnline) {
+        _errorMessage = 'Connexion internet requise';
+        notifyListeners();
+        return;
       }
 
+      debugPrint('➖ Retrait des favoris: ID $contentId');
+      await _service.removeFavorite(contentId);
+      await _loadFavorites(); // Recharger la liste
+      await _loadStats();
       notifyListeners();
+      debugPrint('✅ Retiré des favoris avec succès');
     } catch (e) {
       _errorMessage = e.toString();
       debugPrint('❌ Erreur suppression favori: $e');
@@ -156,7 +132,15 @@ class LibraryProvider extends ChangeNotifier {
   }
 
   Future<bool> isFavorite(int contentId) async {
-    return _favorites.any((f) => f.contentId == contentId);
+    try {
+      if (!_connectivity.isOnline) return false;
+      final result = await _service.checkFavorite(contentId);
+      debugPrint('🔍 Vérification favori ID $contentId: $result');
+      return result;
+    } catch (e) {
+      debugPrint('❌ Erreur check favorite: $e');
+      return false;
+    }
   }
 
   // ===== PLAYLISTS =====
@@ -164,12 +148,7 @@ class LibraryProvider extends ChangeNotifier {
     try {
       if (_connectivity.isOnline) {
         _playlists = await _service.getPlaylists();
-      } else {
-        // Charger depuis la base locale
-        final localPlaylists = await _db.getUserPlaylists(user.userId);
-        _playlists = localPlaylists
-            .map((p) => PlaylistModel.fromJson(p.toMap()))
-            .toList();
+        debugPrint('✅ Playlists rechargées: ${_playlists.length} éléments');
       }
       notifyListeners();
     } catch (e) {
@@ -180,49 +159,126 @@ class LibraryProvider extends ChangeNotifier {
   Future<void> createPlaylist(String name, UserModel user,
       {String? description}) async {
     try {
-      if (_connectivity.isOnline) {
-        final playlist =
-            await _service.createPlaylist(name, description: description);
-        _playlists.add(playlist);
-      } else {
-        // Créer localement et mettre en queue
-        final localPlaylist = PlaylistModel(
-          playlistId: DateTime.now().millisecondsSinceEpoch,
-          playlistName: name,
-          playlistDescription: description,
-          contentCount: 0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-        _playlists.add(localPlaylist);
-
-        await _syncManager.addToQueue(
-          operation: 'INSERT',
-          tableName: 'playlists',
-          data: {
-            'name': name,
-            'description': description,
-            'userId': user.userId
-          },
-        );
+      if (!_connectivity.isOnline) {
+        _errorMessage = 'Connexion internet requise';
+        notifyListeners();
+        return;
       }
+
+      debugPrint('➕ Création playlist: $name');
+      final playlist =
+          await _service.createPlaylist(name, description: description);
+      _playlists.add(playlist);
+      await _loadStats();
       notifyListeners();
+      debugPrint('✅ Playlist créée avec ID: ${playlist.playlistId}');
     } catch (e) {
       _errorMessage = e.toString();
       debugPrint('❌ Erreur création playlist: $e');
     }
   }
 
+  Future<void> deletePlaylist(int playlistId) async {
+    try {
+      if (!_connectivity.isOnline) {
+        _errorMessage = 'Connexion internet requise';
+        notifyListeners();
+        return;
+      }
+
+      debugPrint('➖ Suppression playlist ID: $playlistId');
+      await _service.deletePlaylist(playlistId);
+      _playlists.removeWhere((p) => p.playlistId == playlistId);
+      await _loadStats();
+      notifyListeners();
+      debugPrint('✅ Playlist supprimée');
+    } catch (e) {
+      _errorMessage = e.toString();
+      debugPrint('❌ Erreur suppression playlist: $e');
+    }
+  }
+
+  Future<PlaylistModel> getPlaylist(int playlistId) async {
+    try {
+      if (!_connectivity.isOnline) {
+        throw Exception('Connexion internet requise');
+      }
+      final playlist = await _service.getPlaylist(playlistId);
+      debugPrint('🔍 Playlist récupérée: ${playlist.playlistName} (${playlist.contents.length} éléments)');
+      return playlist;
+    } catch (e) {
+      debugPrint('❌ Erreur récupération playlist: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> addToPlaylist(int playlistId, int contentId) async {
+    try {
+      if (!_connectivity.isOnline) {
+        _errorMessage = 'Connexion internet requise';
+        notifyListeners();
+        return;
+      }
+
+      debugPrint('➕ Ajout contenu $contentId à la playlist $playlistId');
+      await _service.addToPlaylist(playlistId, contentId);
+      final updatedPlaylist = await _service.getPlaylist(playlistId);
+      final index = _playlists.indexWhere((p) => p.playlistId == playlistId);
+      if (index != -1) {
+        _playlists[index] = updatedPlaylist;
+      }
+      notifyListeners();
+      debugPrint('✅ Contenu ajouté à la playlist');
+    } catch (e) {
+      _errorMessage = e.toString();
+      debugPrint('❌ Erreur ajout à la playlist: $e');
+    }
+  }
+
+  Future<void> removeFromPlaylist(int playlistId, int contentId) async {
+    try {
+      if (!_connectivity.isOnline) {
+        _errorMessage = 'Connexion internet requise';
+        notifyListeners();
+        return;
+      }
+
+      debugPrint('➖ Retrait contenu $contentId de la playlist $playlistId');
+      // Note: Cette fonctionnalité nécessite un endpoint API dédié
+      await _service.getPlaylist(playlistId);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ Erreur suppression de la playlist: $e');
+    }
+  }
+
   // ===== HISTORIQUE =====
-  Future<ScanModel?> getScanDetails(int scanId) async {
+  Future<void> refreshHistory() async {
     try {
       if (_connectivity.isOnline) {
-        final scan = await _service
-            .getHistory()
-            .then((list) => list.firstWhere((s) => s.scanId == scanId));
+        await _loadHistory();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('❌ Erreur rafraîchissement historique: $e');
+    }
+  }
+
+  Future<ScanModel?> getScanDetails(int scanId) async {
+    try {
+      if (!_connectivity.isOnline) {
+        throw Exception('Connexion internet requise');
+      }
+      
+      // Chercher d'abord dans l'historique chargé
+      try {
+        final scan = _history.firstWhere((s) => s.scanId == scanId);
+        debugPrint('🔍 Scan trouvé dans l\'historique local: ID $scanId');
         return scan;
-      } else {
-        return _history.firstWhere((s) => s.scanId == scanId);
+      } catch (e) {
+        // Sinon aller chercher sur le serveur
+        debugPrint('🔍 Scan non trouvé localement, requête serveur: ID $scanId');
+        return await _scanService.getScanResult(scanId);
       }
     } catch (e) {
       debugPrint('❌ Erreur récupération scan: $e');

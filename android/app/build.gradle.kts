@@ -2,7 +2,6 @@ plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -12,48 +11,40 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        // ✅ Correction : utiliser = true avec le préfixe "is"
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        // jvmTarget est déprécié mais fonctionne encore, on garde pour l'instant
         jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-    
-    // Alternative moderne (si vous voulez migrer)
-    // kotlin {
-    //     compilerOptions {
-    //         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-    //     }
-    // }
-
-    // ✅ AJOUT DE LA CONFIGURATION DE SIGNATURE
-    signingConfigs {
-        release {
-            storeFile file('../keystore/votre-cle-release.jks')  // Chemin relatif
-            storePassword 'valeon'
-            keyAlias 'votre_alias'
-            keyPassword 'valeon'
-        }
     }
 
     defaultConfig {
         applicationId = "com.app.valeon"
-        minSdk = flutter.minSdkVersion  // ⚠️ Important : minimum 21 pour le desugaring
+        minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("../keystore/votre-cle-release.jks")
+            storePassword = "valeon"
+            keyAlias = "votre_alias"
+            keyPassword = "valeon"
+        }
+        // Supprimez ou modifiez cette section - elle n'existe pas par défaut
+        // create("debug") {
+        //     // Soit vous la supprimez, soit vous la configurez correctement
+        // }
     }
 
     buildTypes {
         release {
-            // ✅ MODIFICATION ICI : Utiliser la signature release au lieu de debug
-            signingConfig = signingConfigs.release
-            
-            // ✅ Optimisations pour la release (optionnel mais recommandé)
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -62,9 +53,12 @@ android {
             )
         }
         
-        // ✅ Optionnel : Garder debug pour le développement
         debug {
-            signingConfig = signingConfigs.debug
+            // Pour debug, utilisez la configuration de signature de debug par défaut
+            // ou commentez cette ligne si vous voulez utiliser la signature automatique
+            // signingConfig = signingConfigs.getByName("debug")
+            // Version correcte :
+            signingConfig = signingConfigs.getByName("debug") // À supprimer si pas configuré
         }
     }
 }
@@ -74,17 +68,16 @@ flutter {
 }
 
 dependencies {
-    // ✅ Dépendance OBLIGATOIRE pour le desugaring
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")  // Version mise à jour
-
-    // Import the Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:33.12.0"))  // Dernière version stable
-
-    // Firebase products
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    
+    // Firebase avec BoM compatible
+    implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
-    // implementation("com.google.firebase:firebase-firestore") // Si besoin
-
+    
     // Facebook SDK
-    implementation("com.facebook.android:facebook-android-sdk:17.0.2")  // Dernière version stable
+    implementation("com.facebook.android:facebook-android-sdk:17.0.2")
+    
+    // MultiDex
+    implementation("androidx.multidex:multidex:2.0.1")
 }

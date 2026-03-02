@@ -1,19 +1,18 @@
-// lib/providers/recommendation_provider.dart
+// lib/providers/recommendation_provider.dart (CORRIGÉ)
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/content_model.dart';
 import '../services/recommendation_service.dart';
-import '../core/database/database_service.dart';
 import '../core/network/connectivity_service.dart';
 
 class RecommendationProvider extends ChangeNotifier {
   final RecommendationService _service = RecommendationService();
-  final DatabaseService _db = DatabaseService();
   final ConnectivityService _connectivity = ConnectivityService();
 
   List<ContentModel> _personalized = [];
   List<ContentModel> _trending = [];
   List<ContentModel> _forYou = [];
+  Map<int, List<ContentModel>> _similarCache = {}; // Cache pour les similaires
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -32,10 +31,12 @@ class RecommendationProvider extends ChangeNotifier {
         await Future.wait([
           _loadPersonalized(user),
           _loadTrending(),
-          _loadForYou(user),
         ]);
+        _forYou = [..._personalized, ..._trending];
+        _forYou.shuffle();
+        _forYou = _forYou.take(10).toList();
       } else {
-        await _loadOfflineRecommendations(user);
+        _errorMessage = 'Connexion internet requise pour les recommandations';
       }
     } catch (e) {
       _errorMessage = e.toString();
@@ -46,11 +47,14 @@ class RecommendationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ===== MODIFICATION: AJOUT DU PARAMÈTRE limit OBLIGATOIRE =====
   Future<void> _loadPersonalized(UserModel user) async {
     try {
-      _personalized = await _service.getPersonalized();
+      // Ajout du paramètre limit: 20 (ou toute autre valeur par défaut)
+      _personalized = await _service.getPersonalized(limit: 20);
     } catch (e) {
       debugPrint('❌ Erreur load personalized: $e');
+      _personalized = []; // ← Éviter de garder d'anciennes valeurs
     }
   }
 
@@ -59,85 +63,37 @@ class RecommendationProvider extends ChangeNotifier {
       _trending = await _service.getTrending();
     } catch (e) {
       debugPrint('❌ Erreur load trending: $e');
+      _trending = []; // ← Éviter de garder d'anciennes valeurs
     }
   }
 
-  Future<void> _loadForYou(UserModel user) async {
+  // NOUVELLE MÉTHODE : récupérer les contenus similaires
+  Future<List<ContentModel>> getSimilar(int contentId, {int limit = 5}) async {
+    // Vérifier le cache
+    if (_similarCache.containsKey(contentId)) {
+      return _similarCache[contentId]!;
+    }
+
     try {
-      // Mix de personalized et trending
-      _forYou = [..._personalized, ..._trending];
-      _forYou.shuffle();
-      _forYou = _forYou.take(10).toList();
-    } catch (e) {
-      debugPrint('❌ Erreur load for you: $e');
-    }
-  }
-
-  Future<void> _loadOfflineRecommendations(UserModel user) async {
-    // En mode offline, utiliser l'historique et les favoris
-    final scans = await _db.getUserScans(user.userId);
-    final recentTypes = <String, int>{};
-
-    for (var scan in scans) {
-      if (scan.result != null && scan.result!['type'] != null) {
-        final type = scan.result!['type'];
-        recentTypes[type] = (recentTypes[type] ?? 0) + 1;
+      if (!_connectivity.isOnline) {
+        return [];
       }
+
+      final similar = await _service.getSimilar(contentId, limit: limit);
+      _similarCache[contentId] = similar;
+      return similar;
+    } catch (e) {
+      debugPrint('❌ Erreur getSimilar: $e');
+      return [];
     }
-
-    final preferredType = recentTypes.entries.isNotEmpty
-        ? recentTypes.entries.reduce((a, b) => a.value > b.value ? a : b).key
-        : 'music';
-
-    _personalized = _getMockRecommendations(preferredType, 5);
-    _trending = _getMockRecommendations('trending', 5);
-    _forYou = _getMockRecommendations('mixed', 10);
-  }
-
-  List<ContentModel> _getMockRecommendations(String type, int count) {
-    final mockData = [
-      ContentModel(
-        contentId: 1,
-        contentType: 'movie',
-        contentTitle: 'Inception',
-        contentArtist: 'Christopher Nolan',
-        contentReleaseDate: '2010',
-        contentDescription: 'Un voleur qui s\'infiltre dans les rêves.',
-        contentImage: '',
-      ),
-      ContentModel(
-        contentId: 2,
-        contentType: 'music',
-        contentTitle: 'Blinding Lights',
-        contentArtist: 'The Weeknd',
-        contentReleaseDate: '2019',
-        contentDescription: 'Chanson populaire de The Weeknd.',
-        contentImage: '',
-      ),
-      ContentModel(
-        contentId: 3,
-        contentType: 'movie',
-        contentTitle: 'Interstellar',
-        contentArtist: 'Christopher Nolan',
-        contentReleaseDate: '2014',
-        contentDescription: 'Un voyage à travers les étoiles.',
-        contentImage: '',
-      ),
-      ContentModel(
-        contentId: 4,
-        contentType: 'music',
-        contentTitle: 'Heat Waves',
-        contentArtist: 'Glass Animals',
-        contentReleaseDate: '2020',
-        contentDescription: 'Chanson populaire du groupe Glass Animals.',
-        contentImage: '',
-      ),
-    ];
-    return mockData.take(count).toList();
   }
 
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  void clearCache() {
+    _similarCache.clear();
   }
 }

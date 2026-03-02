@@ -51,13 +51,8 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
       final path =
           '${dir.path}/valeon_record_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-      // ✅ CORRECTION ICI : RecordConfig est un constructeur, pas une constante
       await _recorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc, // Spécifier l'encodeur
-          bitRate: 128000, // Bitrate en bits par seconde
-          sampleRate: 44100, // Taux d'échantillonnage
-        ),
+        const RecordConfig(encoder: AudioEncoder.aacLc),
         path: path,
       );
       setState(() => _isRecording = true);
@@ -74,7 +69,15 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
 
   Future<void> _startScan(File file) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final connectivityProvider =
+        Provider.of<ConnectivityProvider>(context, listen: false);
+
     if (authProvider.user == null) return;
+
+    if (!connectivityProvider.isOnline) {
+      _showError('Connexion internet requise pour scanner');
+      return;
+    }
 
     final scanProvider = Provider.of<ScanProvider>(context, listen: false);
     await scanProvider.scanAudio(file, authProvider.user!);
@@ -91,7 +94,6 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
         builder: (context) => ScanResultScreen(scanResult: scan.result),
       ),
     ).then((_) {
-      // Reset le scan provider après retour
       Provider.of<ScanProvider>(context, listen: false).reset();
     });
   }
@@ -113,7 +115,6 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
     final connectivity = Provider.of<ConnectivityProvider>(context);
     final isPremium = auth.isPremium;
 
-    // Écouter les changements d'état
     if (scanState.phase == ScanPhase.done && scanState.result != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _navigateToResult(scanState.result!);
@@ -131,8 +132,6 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
           : Column(
               children: [
                 const Spacer(),
-
-                // Indicateur plan Free
                 if (!isPremium) ...[
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -166,8 +165,6 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
                   ),
                   const SizedBox(height: 24),
                 ],
-
-                // Bannière hors ligne
                 if (!connectivity.isOnline)
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -182,7 +179,7 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Mode hors ligne - Scan sauvegardé localement',
+                            'Connexion internet requise pour scanner',
                             style: TextStyle(color: Colors.orange),
                           ),
                         ),
@@ -190,36 +187,37 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
                     ),
                   ),
                 if (!connectivity.isOnline) const SizedBox(height: 24),
-
-                // Bouton d'enregistrement
                 GestureDetector(
-                  onTap: _toggleRecord,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    width: 140,
-                    height: 140,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: _isRecording
-                            ? [Colors.red, const Color(0xFFFF6B6B)]
-                            : [AppColors.primaryBlue, AppColors.lightPurple],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (_isRecording
-                                  ? Colors.red
-                                  : AppColors.primaryBlue)
-                              .withOpacity(0.4),
-                          blurRadius: 24,
-                          spreadRadius: 4,
+                  onTap: connectivity.isOnline ? _toggleRecord : null,
+                  child: Opacity(
+                    opacity: connectivity.isOnline ? 1.0 : 0.5,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: _isRecording
+                              ? [Colors.red, const Color(0xFFFF6B6B)]
+                              : [AppColors.primaryBlue, AppColors.lightPurple],
                         ),
-                      ],
-                    ),
-                    child: Icon(
-                      _isRecording ? Icons.stop : Icons.mic,
-                      size: 56,
-                      color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_isRecording
+                                    ? Colors.red
+                                    : AppColors.primaryBlue)
+                                .withOpacity(0.4),
+                            blurRadius: 24,
+                            spreadRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        _isRecording ? Icons.stop : Icons.mic,
+                        size: 56,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -227,19 +225,25 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
                 Text(
                   _isRecording
                       ? 'Enregistrement en cours...'
-                      : 'Appuyez pour enregistrer',
+                      : connectivity.isOnline
+                          ? 'Appuyez pour enregistrer'
+                          : 'Connectez-vous pour scanner',
                   style: const TextStyle(color: Colors.white70, fontSize: 15),
                 ),
                 const SizedBox(height: 48),
-
-                // Bouton d'import
                 OutlinedButton.icon(
-                  onPressed: _pickFile,
+                  onPressed: connectivity.isOnline ? _pickFile : null,
                   icon: const Icon(Icons.upload_file),
                   label: const Text('Importer un fichier audio'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primaryBlue,
-                    side: const BorderSide(color: AppColors.primaryBlue),
+                    foregroundColor: connectivity.isOnline
+                        ? AppColors.primaryBlue
+                        : Colors.grey,
+                    side: BorderSide(
+                      color: connectivity.isOnline
+                          ? AppColors.primaryBlue
+                          : Colors.grey,
+                    ),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 14),
                     shape: RoundedRectangleBorder(

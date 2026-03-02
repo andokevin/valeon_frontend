@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../config/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/library_provider.dart';
+import '../../providers/connectivity_provider.dart';
 import '../../widgets/layout/space_background.dart';
 import 'playlist_detail_screen.dart';
 
@@ -20,14 +21,24 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _playlistNameController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final library = Provider.of<LibraryProvider>(context, listen: false);
+    final connectivity =
+        Provider.of<ConnectivityProvider>(context, listen: false);
 
-    if (auth.user != null) {
+    if (auth.user != null && connectivity.isOnline) {
       await library.loadPlaylists(auth.user!);
     }
   }
@@ -87,90 +98,94 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
     final isTablet = ResponsiveHelper.isTablet(context);
     final hPadding = ResponsiveHelper.paddingScreen(context);
     final library = Provider.of<LibraryProvider>(context);
+    final connectivity = Provider.of<ConnectivityProvider>(context);
 
     return SpaceBackground(
       child: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context, hPadding, isTablet),
+            _buildHeader(context, hPadding, isTablet, connectivity.isOnline),
             Expanded(
-              child: library.playlists.isEmpty
-                  ? _buildEmptyState(isTablet)
-                  : ListView.separated(
-                      padding: EdgeInsets.all(hPadding),
-                      itemCount: library.playlists.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final playlist = library.playlists[index];
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => PlaylistDetailScreen(
-                                  playlistId: playlist.playlistId,
-                                  playlistName: playlist.playlistName,
+              child: !connectivity.isOnline
+                  ? _buildOfflineView()
+                  : library.playlists.isEmpty
+                      ? _buildEmptyState(isTablet)
+                      : ListView.separated(
+                          padding: EdgeInsets.all(hPadding),
+                          itemCount: library.playlists.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final playlist = library.playlists[index];
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PlaylistDetailScreen(
+                                      playlistId: playlist.playlistId,
+                                      playlistName: playlist.playlistName,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                      color: Colors.white.withOpacity(0.2)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.purple.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(
+                                        Icons.playlist_play,
+                                        color: Colors.purple,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            playlist.playlistName,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${playlist.contentCount} éléments',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.white70,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.white54,
+                                      size: 16,
+                                    ),
+                                  ],
                                 ),
                               ),
                             );
                           },
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                  color: Colors.white.withOpacity(0.2)),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.purple.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.playlist_play,
-                                    color: Colors.purple,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        playlist.playlistName,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${playlist.contentCount} éléments',
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.arrow_forward_ios,
-                                  color: Colors.white54,
-                                  size: 16,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                        ),
             ),
           ],
         ),
@@ -178,7 +193,8 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, double hPadding, bool isTablet) {
+  Widget _buildHeader(
+      BuildContext context, double hPadding, bool isTablet, bool isOnline) {
     return Padding(
       padding: EdgeInsets.all(hPadding),
       child: Row(
@@ -198,9 +214,42 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
               ),
             ),
           ),
-          IconButton(
-            onPressed: _showCreateDialog,
-            icon: const Icon(Icons.add, color: Colors.white),
+          if (isOnline)
+            IconButton(
+              onPressed: _showCreateDialog,
+              icon: const Icon(Icons.add, color: Colors.white),
+            )
+          else
+            const SizedBox(width: 48),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfflineView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.wifi_off,
+            size: 64,
+            color: Colors.orange,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Pas de connexion internet',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Connectez-vous pour voir vos playlists',
+            style: TextStyle(color: Colors.white70),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

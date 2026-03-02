@@ -11,7 +11,8 @@ class RecommendationService {
     _api.init();
   }
 
-  Future<List<ContentModel>> getPersonalized({String? contentType}) async {
+  Future<List<ContentModel>> getPersonalized(
+      {String? contentType, required int limit}) async {
     try {
       final response = await _api.get(
         '/recommendations/personalized',

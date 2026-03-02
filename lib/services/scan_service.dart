@@ -63,7 +63,7 @@ class ScanService {
     }
   }
 
-  Future<ScanModel> pollScanResult(int scanId, {int maxAttempts = 30}) async {
+  Future<ScanModel> pollScanResult(int scanId, {int maxAttempts = 1000}) async {
     for (var i = 0; i < maxAttempts; i++) {
       await Future.delayed(const Duration(seconds: 2));
       final scan = await getScanResult(scanId);
@@ -73,5 +73,15 @@ class ScanService {
       }
     }
     throw const AppException('Délai de traitement dépassé');
+  }
+
+  Future<List<ScanModel>> getHistory({int skip = 0, int limit = 50}) async {
+    try {
+      final response = await _api
+          .get('/library/history', params: {'skip': skip, 'limit': limit});
+      return (response.data as List).map((j) => ScanModel.fromJson(j)).toList();
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
+    }
   }
 }

@@ -4,9 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:valeon/providers/connectivity_provider.dart';
 import '../../config/app_theme.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/sync_provider.dart';
 import '../../widgets/layout/space_background.dart';
-import '../../widgets/layout/offline_banner.dart';
 import 'settings_screen.dart';
 import 'premium_screen.dart';
 
@@ -24,13 +22,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final hPadding = ResponsiveHelper.paddingScreen(context);
     final auth = Provider.of<AuthProvider>(context);
     final connectivity = Provider.of<ConnectivityProvider>(context);
-    final syncProvider = Provider.of<SyncProvider>(context);
 
     return SpaceBackground(
       child: SafeArea(
         child: Column(
           children: [
-            if (!connectivity.isOnline) const OfflineBanner(),
             _buildHeader(context, hPadding, isTablet),
             Expanded(
               child: SingleChildScrollView(
@@ -42,8 +38,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildStats(context, isTablet),
                     const SizedBox(height: 24),
                     _buildSubscriptionCard(context, auth, isTablet),
-                    const SizedBox(height: 24),
-                    _buildSyncInfo(context, syncProvider, isTablet),
                     const SizedBox(height: 24),
                     _buildMenuItems(context, isTablet),
                     const SizedBox(height: 24),
@@ -86,15 +80,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const Spacer(),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-            icon: const Icon(Icons.settings, color: Colors.white),
-          ),
+          // IconButton(
+          //   onPressed: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => const SettingsScreen()),
+          //     );
+          //   },
+          //   icon: const Icon(Icons.settings, color: Colors.white),
+          // ),
         ],
       ),
     );
@@ -303,55 +297,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: const Text('Upgrade'),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSyncInfo(
-      BuildContext context, SyncProvider sync, bool isTablet) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            sync.isSyncing ? Icons.sync : Icons.sync,
-            color: sync.isSyncing ? Colors.orange : Colors.green,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  sync.isSyncing ? 'Synchronisation...' : 'Synchronisé',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  sync.syncStatusMessage,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: sync.isSyncing ? null : () => sync.triggerSync(),
-            child: Text(
-              sync.isSyncing ? 'En cours' : 'Sync',
-              style: const TextStyle(color: AppColors.primaryBlue),
-            ),
-          ),
         ],
       ),
     );

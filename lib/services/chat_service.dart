@@ -1,166 +1,143 @@
-// lib/services/chat_service.dart
+// lib/services/chat_service.dart (MODIFIÉ)
 import '../models/chat_model.dart';
-import '../core/database/database_service.dart';
 import '../core/network/connectivity_service.dart';
 import '../core/network/api_client.dart';
 import 'package:flutter/foundation.dart';
+import '../config/app_config.dart';
 
 class ChatService {
-  final DatabaseService _db = DatabaseService();
   final ConnectivityService _connectivity = ConnectivityService();
   final ApiClient _api = ApiClient();
+  final String baseUrl = AppConfig.apiBaseUrl;
 
   ChatService() {
     _api.init();
   }
 
   Future<ChatConversation> getOrCreateChat(int userId) async {
-    final existing = await _db.getLastChat(userId);
-    if (existing != null) return existing;
+    try {
+      if (!_connectivity.isOnline) {
+        // Mode offline - conversation locale uniquement
+        return ChatConversation(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          userId: userId.toString(),
+          messages: [
+            ChatMessage.assistant(
+              'Bonjour ! Je suis votre assistant Valeon. Connectez-vous à Internet pour utiliser le chat.',
+            ),
+          ],
+          lastMessageAt: DateTime.now(),
+        );
+      }
 
-    return ChatConversation(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      userId: userId.toString(),
-      messages: [
-        ChatMessage.assistant(
-          'Bonjour ! Je suis votre assistant Valeon. Posez-moi des questions sur des films, musiques ou séries !',
-        ),
-      ],
-      lastMessageAt: DateTime.now(),
-    );
+      // Récupérer l'historique depuis l'API
+      final response = await _api.get('/chat/history/$userId');
+      final data = response.data;
+
+      if (data != null && data is Map && data['messages'] != null) {
+        final messages = (data['messages'] as List)
+            .map((m) => ChatMessage.fromJson(m))
+            .toList();
+
+        return ChatConversation(
+          id: data['conversation_id'] ??
+              DateTime.now().millisecondsSinceEpoch.toString(),
+          userId: userId.toString(),
+          messages: messages,
+          lastMessageAt: DateTime.now(),
+        );
+      }
+
+      // Créer une nouvelle conversation
+      return ChatConversation(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        userId: userId.toString(),
+        messages: [
+          ChatMessage.assistant(
+            'Bonjour ! Je suis votre assistant Valeon. Posez-moi des questions sur des films, musiques ou séries !',
+          ),
+        ],
+        lastMessageAt: DateTime.now(),
+      );
+    } catch (e) {
+      debugPrint('❌ Erreur getOrCreateChat: $e');
+      return ChatConversation(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        userId: userId.toString(),
+        messages: [
+          ChatMessage.assistant(
+            'Bonjour ! Je suis votre assistant Valeon. Une erreur est survenue, veuillez réessayer.',
+          ),
+        ],
+        lastMessageAt: DateTime.now(),
+      );
+    }
   }
 
   Future<ChatMessage> sendMessage(int userId, String content) async {
-    final userMessage = ChatMessage.user(content);
-    final chat = await getOrCreateChat(userId);
-
-    final chatWithUserMsg = chat.copyWith(
-      messages: [...chat.messages, userMessage],
-      lastMessageAt: DateTime.now(),
-    );
-    await _db.saveChat(chatWithUserMsg);
-
-    String response;
-    if (_connectivity.isOnline) {
-      response = await _getAIResponse(content, userId);
-    } else {
-      response = _getOfflineResponse(content);
+    if (!_connectivity.isOnline) {
+      return ChatMessage.assistant(
+        'Mode hors ligne - Connectez-vous à Internet pour utiliser le chat.',
+      );
     }
 
-    final assistantMessage = ChatMessage.assistant(response);
-    final updatedChat = chatWithUserMsg.copyWith(
-      messages: [...chatWithUserMsg.messages, assistantMessage],
-      lastMessageAt: DateTime.now(),
-    );
-    await _db.saveChat(updatedChat);
-
-    return assistantMessage;
-  }
-
-  Future<String> _getAIResponse(String query, int userId) async {
     try {
+      debugPrint('📤 Envoi message à $baseUrl/chat/message');
+
       final response = await _api.post(
-        '/recommendations/chat',
+        '/chat/message',
         data: {
-          'query': query,
-          'context': {'userId': userId}
+          'message': content,
+          'conversation_id': userId.toString(),
         },
       );
+
+      debugPrint('📥 Réponse reçue: ${response.statusCode}');
+
       final data = response.data;
-      if (data != null && data['recommendations'] != null) {
-        final recs = data['recommendations'] as List<dynamic>? ?? [];
-        if (recs.isNotEmpty) {
-          var result = 'Voici mes recommandations :\n\n';
-          for (final rec in recs.take(5)) {
-            result += '🎯 ${rec['title']}';
-            if (rec['artist'] != null) {
-              result += ' par ${rec['artist']}';
-            }
-            result += '\n${rec['reason'] ?? ''}\n\n';
-          }
-          return result.trim();
-        }
+      if (data != null && data['response'] != null) {
+        return ChatMessage.assistant(data['response']);
       }
-      return "Je n'ai pas trouvé de recommandations pour votre demande.";
+
+      return ChatMessage.assistant(
+        "Je n'ai pas pu traiter votre demande. Veuillez réessayer.",
+      );
     } catch (e) {
       debugPrint('❌ API chat error: $e');
-      return _getOfflineResponse(query);
+
+      // Fallback : réponse locale
+      return ChatMessage.assistant(
+        _getLocalResponse(content),
+      );
     }
   }
 
-  String _getOfflineResponse(String query) {
+  String _getLocalResponse(String query) {
+    // Réponses locales en cas d'échec API
     final lowerQuery = query.toLowerCase();
-    if (lowerQuery.contains('film') || lowerQuery.contains('movie')) {
-      return "🔴 Mode hors ligne\n\nFilms populaires :\n"
-          "• Inception (Sci-fi)\n"
-          "• Interstellar (Sci-fi)\n"
-          "• The Dark Knight (Action)\n\n"
-          "Connectez-vous pour des recommandations personnalisées !";
-    } else if (lowerQuery.contains('musique') || lowerQuery.contains('music')) {
-      return "🔴 Mode hors ligne\n\nHits populaires :\n"
-          "• Blinding Lights - The Weeknd\n"
-          "• Heat Waves - Glass Animals\n"
-          "• Sunflower - Post Malone\n\n"
-          "Connectez-vous pour vos recommandations !";
+
+    if (lowerQuery.contains('bonjour') || lowerQuery.contains('salut')) {
+      return 'Bonjour ! Comment puis-je vous aider aujourd\'hui ?';
     }
-    return "🔴 Hors ligne — Connectez-vous à Internet pour des recommandations personnalisées.";
+    if (lowerQuery.contains('film') || lowerQuery.contains('movie')) {
+      return 'Je peux vous aider à trouver des films ! Que cherchez-vous ?';
+    }
+    if (lowerQuery.contains('musique') || lowerQuery.contains('chanson')) {
+      return 'Je connais beaucoup de musique ! Quel artiste ou titre vous intéresse ?';
+    }
+    if (lowerQuery.contains('merci')) {
+      return 'Avec plaisir ! N\'hésitez pas si vous avez d\'autres questions.';
+    }
+
+    return "Je suis votre assistant Valeon. Posez-moi des questions sur les films, la musique ou les séries !";
   }
 
   Future<void> clearHistory(int userId) async {
-    final chat = await getOrCreateChat(userId);
-    final welcomeMsg = ChatMessage.assistant(
-      'Historique effacé. Comment puis-je vous aider ?',
-    );
-
-    final clearedChat = chat.copyWith(
-      messages: [welcomeMsg],
-      lastMessageAt: DateTime.now(),
-    );
-    await _db.saveChat(clearedChat);
-  }
-
-  Future<List<ChatMessage>> getRemoteMessages(int userId) async {
     try {
-      if (!_connectivity.isOnline) return [];
-      final response = await _api.get('/chat/history/$userId');
-      final data = response.data;
-      if (data is List) {
-        return data.map((item) => ChatMessage.fromJson(item)).toList();
-      }
-      return [];
+      if (!_connectivity.isOnline) return;
+      await _api.post('/chat/clear/$userId');
     } catch (e) {
-      debugPrint('❌ Erreur messages distants: $e');
-      return [];
-    }
-  }
-
-  Future<bool> deleteRemoteMessage(int userId, String messageId) async {
-    try {
-      if (!_connectivity.isOnline) return false;
-      await _api.delete('/chat/message/$messageId');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Erreur suppression distante: $e');
-      return false;
-    }
-  }
-
-  Future<ChatMessage?> syncMessage(int userId, ChatMessage message) async {
-    try {
-      if (!_connectivity.isOnline) return null;
-      final response = await _api.post(
-        '/chat/messages',
-        data: {'userId': userId, 'message': message.toJson()},
-      );
-      if (response.statusCode == 200) {
-        final syncedMsg = message.copyWith(synced: true);
-        await _db.markMessagesAsSynced(userId);
-        return syncedMsg;
-      }
-      return null;
-    } catch (e) {
-      debugPrint('❌ Erreur sync message: $e');
-      return null;
+      debugPrint('❌ Erreur clear history: $e');
     }
   }
 }

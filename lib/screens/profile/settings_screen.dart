@@ -1,8 +1,6 @@
-// lib/screens/profile/settings_screen.dart
+// lib/screens/profile/settings_screen.dart (CORRIGÉ - version simple)
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../config/app_theme.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/layout/space_background.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -138,14 +136,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
           ),
           const Expanded(
             child: Text(
               'Paramètres',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -161,8 +159,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Text(
       title,
       style: TextStyle(
-        fontSize: isTablet ? 18 : 16,
-        fontWeight: FontWeight.bold,
+        fontSize: isTablet ? 16 : 14,
+        fontWeight: FontWeight.w600,
         color: Colors.white70,
       ),
     );
@@ -178,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -192,9 +190,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: iconColor.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: iconColor),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,15 +202,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w500,
+                    fontSize: 14,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
                 Text(
                   subtitle,
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 12,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -220,7 +222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: AppColors.primaryBlue,
+            activeColor: AppColors.primaryBlue,
           ),
         ],
       ),
@@ -237,7 +239,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -251,28 +253,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: iconColor.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: iconColor),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               title,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w500,
+                fontSize: 14,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           DropdownButton<String>(
             value: value,
             dropdownColor: AppColors.surface,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white, fontSize: 13),
             underline: const SizedBox(),
-            icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+            icon: const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 20),
             items: items.map((item) {
               return DropdownMenuItem(
                 value: item,
-                child: Text(item),
+                child: Text(
+                  item,
+                  style: const TextStyle(fontSize: 13),
+                ),
               );
             }).toList(),
             onChanged: onChanged,
@@ -293,7 +301,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
@@ -307,9 +315,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: iconColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: iconColor),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,15 +327,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w500,
+                      fontSize: 14,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
                   Text(
                     subtitle,
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -335,7 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Icon(
               Icons.arrow_forward_ios,
               color: Colors.white54,
-              size: 16,
+              size: 14,
             ),
           ],
         ),

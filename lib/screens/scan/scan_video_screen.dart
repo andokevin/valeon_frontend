@@ -33,7 +33,15 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
 
   Future<void> _startScan(File file) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final connectivityProvider =
+        Provider.of<ConnectivityProvider>(context, listen: false);
+
     if (authProvider.user == null) return;
+
+    if (!connectivityProvider.isOnline) {
+      _showError('Connexion internet requise pour scanner');
+      return;
+    }
 
     final scanProvider = Provider.of<ScanProvider>(context, listen: false);
     await scanProvider.scanVideo(file, authProvider.user!);
@@ -54,6 +62,16 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
     });
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scanState = Provider.of<ScanProvider>(context);
@@ -61,7 +79,7 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
     final connectivity = Provider.of<ConnectivityProvider>(context);
     final isPremium = auth.isPremium;
 
-    if (!isPremium) {
+    if (isPremium) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -105,7 +123,8 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
           ],
         ),
       );
-    }
+     }
+    
 
     if (scanState.phase != ScanPhase.idle) {
       return Padding(
@@ -129,7 +148,6 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Bannière hors ligne
           if (!connectivity.isOnline)
             Container(
               padding: const EdgeInsets.all(12),
@@ -144,7 +162,7 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Mode hors ligne - Scan sauvegardé localement',
+                      'Connexion internet requise pour scanner',
                       style: TextStyle(color: Colors.orange),
                     ),
                   ),
@@ -152,7 +170,6 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
               ),
             ),
           if (!connectivity.isOnline) const SizedBox(height: 32),
-
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
@@ -182,7 +199,9 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
           ),
           const SizedBox(height: 40),
           ElevatedButton.icon(
-            onPressed: () => _pickVideo(ImageSource.camera),
+            onPressed: connectivity.isOnline
+                ? () => _pickVideo(ImageSource.camera)
+                : null,
             icon: const Icon(Icons.videocam),
             label: const Text('Enregistrer une vidéo'),
             style: ElevatedButton.styleFrom(
@@ -191,12 +210,18 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
-            onPressed: () => _pickVideo(ImageSource.gallery),
+            onPressed: connectivity.isOnline
+                ? () => _pickVideo(ImageSource.gallery)
+                : null,
             icon: const Icon(Icons.video_library),
             label: const Text('Choisir depuis la galerie'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.secondary,
-              side: const BorderSide(color: AppColors.secondary),
+              foregroundColor:
+                  connectivity.isOnline ? AppColors.secondary : Colors.grey,
+              side: BorderSide(
+                color:
+                    connectivity.isOnline ? AppColors.secondary : Colors.grey,
+              ),
               minimumSize: const Size(double.infinity, 52),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

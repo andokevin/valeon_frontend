@@ -1,6 +1,4 @@
 // lib/models/scan_model.dart
-import 'dart:convert';
-
 import 'package:valeon/models/content_model.dart';
 
 enum ScanType { audio, image, video }
@@ -64,40 +62,19 @@ class ScanModel {
             : null,
       );
 
-  factory ScanModel.fromDbMap(Map<String, dynamic> map) => ScanModel(
-        scanId: map['scan_id'],
-        scanType: ScanType.values.firstWhere(
-          (e) => e.name == map['scan_type'],
-          orElse: () => ScanType.audio,
-        ),
-        inputSource: map['input_source'] ?? 'file',
-        status: ScanStatus.values.firstWhere(
-          (e) => e.name == map['status'],
-          orElse: () => ScanStatus.pending,
-        ),
-        result: map['result'] != null
-            ? jsonDecode(map['result']) as Map<String, dynamic>
-            : null,
-        error: map['error'],
-        scanDate: DateTime.tryParse(map['scan_date'] ?? '') ?? DateTime.now(),
-        processingTime: (map['processing_time'] as num?)?.toDouble(),
-        filePath: map['file_path'],
-        scanUser: map['scan_user'],
-        recognizedContentId: map['recognized_content_id'],
-      );
-
-  Map<String, dynamic> toDbMap() => {
-        if (scanId != null) 'scan_id': scanId,
+  Map<String, dynamic> toJson() => {
+        'scan_id': scanId,
         'scan_type': scanType.name,
         'input_source': inputSource,
         'status': status.name,
-        'result': result != null ? jsonEncode(result) : null,
+        'result': result,
         'error': error,
         'scan_date': scanDate.toIso8601String(),
         'processing_time': processingTime,
         'file_path': filePath,
         'scan_user': scanUser,
         'recognized_content_id': recognizedContentId,
+        'content': content?.toJson(),
       };
 
   String get statusLabel {

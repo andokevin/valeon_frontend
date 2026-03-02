@@ -1,7 +1,8 @@
-// lib/config/app_theme.dart
+// lib/config/app_theme.dart (MODIFIÉ - ajout dark theme)
 import 'package:flutter/material.dart';
 
 class AppColors {
+  // Couleurs existantes
   static const Color primaryBlue = Color(0xFF4A6FFF);
   static const Color darkPurple = Color(0xFF1A1B3D);
   static const Color mediumPurple = Color(0xFF4A3B8F);
@@ -27,6 +28,14 @@ class AppColors {
   static const Color surfaceVariant = Color(0xFF16213E);
   static const Color onBackground = Colors.white;
   static const Color onSurface = Color(0xFFCCCCDD);
+
+  // NOUVELLES COULEURS POUR DARK MODE
+  static const Color darkBackground = Color(0xFF121212);
+  static const Color darkSurface = Color(0xFF1E1E1E);
+  static const Color darkCard = Color(0xFF2C2C2C);
+  static const Color darkTextPrimary = Color(0xFFFFFFFF);
+  static const Color darkTextSecondary = Color(0xFFB0B0B0);
+  static const Color darkDivider = Color(0xFF3D3D3D);
 
   static const LinearGradient spaceGradient = LinearGradient(
     begin: Alignment.topCenter,
@@ -64,65 +73,58 @@ class AppTextStyles {
   static const TextStyle titleLarge = TextStyle(
     fontSize: 28,
     fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
   );
   static const TextStyle titleMedium = TextStyle(
     fontSize: 22,
     fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
   );
   static const TextStyle titleSmall = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
   );
   static const TextStyle subtitle = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
   );
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.normal,
-    color: AppColors.textPrimary,
   );
   static const TextStyle bodyMedium = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.normal,
-    color: AppColors.textPrimary,
   );
   static const TextStyle bodySmall = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.normal,
-    color: AppColors.textSecondary,
   );
   static const TextStyle button = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
   );
 }
 
 class AppTheme {
+  // Light Theme (existant)
   static ThemeData get lightTheme {
     return ThemeData(
+      brightness: Brightness.light,
       primaryColor: AppColors.primaryBlue,
       scaffoldBackgroundColor: AppColors.scaffoldBackground,
-      brightness: Brightness.light,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        iconTheme: IconThemeData(color: AppColors.textDark),
         titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: AppColors.textDark,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryBlue,
-          foregroundColor: AppColors.textPrimary,
+          foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           shape: RoundedRectangleBorder(
@@ -151,6 +153,61 @@ class AppTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
+    );
+  }
+
+  // Dark Theme (NOUVEAU)
+  static ThemeData get darkTheme {
+    return ThemeData(
+      brightness: Brightness.dark,
+      primaryColor: AppColors.primaryBlue,
+      scaffoldBackgroundColor: AppColors.darkBackground,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: AppColors.darkTextPrimary),
+        titleTextStyle: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: AppColors.darkTextPrimary,
+        ),
+      ),
+      cardColor: AppColors.darkCard,
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryBlue,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizes.radiusButton),
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.darkSurface,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
+        ),
+        hintStyle: const TextStyle(color: AppColors.darkTextSecondary),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.darkSurface,
+        selectedItemColor: AppColors.primaryBlue,
+        unselectedItemColor: AppColors.darkTextSecondary,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+      dividerColor: AppColors.darkDivider,
+      dialogTheme: DialogThemeData(backgroundColor: AppColors.darkSurface),
     );
   }
 }

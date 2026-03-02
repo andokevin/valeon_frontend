@@ -6,14 +6,12 @@ class ChatMessage {
   final MessageRole role;
   final String content;
   final DateTime timestamp;
-  final bool synced;
 
   const ChatMessage({
     required this.id,
     required this.role,
     required this.content,
     required this.timestamp,
-    this.synced = false,
   });
 
   factory ChatMessage.user(String content) {
@@ -49,7 +47,6 @@ class ChatMessage {
         content: json['content'] ?? '',
         timestamp: DateTime.parse(
             json['timestamp'] ?? DateTime.now().toIso8601String()),
-        synced: json['synced'] == true,
       );
 
   Map<String, dynamic> toJson() => {
@@ -57,7 +54,6 @@ class ChatMessage {
         'role': _roleToString(role),
         'content': content,
         'timestamp': timestamp.toIso8601String(),
-        'synced': synced,
       };
 
   static MessageRole _roleFromString(String role) {
@@ -82,13 +78,12 @@ class ChatMessage {
     }
   }
 
-  ChatMessage copyWith({bool? synced}) {
+  ChatMessage copyWith() {
     return ChatMessage(
       id: id,
       role: role,
       content: content,
       timestamp: timestamp,
-      synced: synced ?? this.synced,
     );
   }
 }
@@ -98,14 +93,12 @@ class ChatConversation {
   final String userId;
   final List<ChatMessage> messages;
   final DateTime lastMessageAt;
-  final bool synced;
 
   const ChatConversation({
     required this.id,
     required this.userId,
     required this.messages,
     required this.lastMessageAt,
-    this.synced = false,
   });
 
   factory ChatConversation.fromJson(Map<String, dynamic> json) =>
@@ -118,7 +111,6 @@ class ChatConversation {
         lastMessageAt: DateTime.parse(json['lastMessageAt'] ??
             json['last_message_at'] ??
             DateTime.now().toIso8601String()),
-        synced: json['synced'] == true,
       );
 
   Map<String, dynamic> toJson() => {
@@ -126,7 +118,6 @@ class ChatConversation {
         'userId': userId,
         'messages': messages.map((m) => m.toJson()).toList(),
         'lastMessageAt': lastMessageAt.toIso8601String(),
-        'synced': synced,
       };
 
   ChatConversation copyWith({
@@ -134,14 +125,12 @@ class ChatConversation {
     String? userId,
     List<ChatMessage>? messages,
     DateTime? lastMessageAt,
-    bool? synced,
   }) =>
       ChatConversation(
         id: id ?? this.id,
         userId: userId ?? this.userId,
         messages: messages ?? this.messages,
         lastMessageAt: lastMessageAt ?? this.lastMessageAt,
-        synced: synced ?? this.synced,
       );
 
   ChatMessage? get lastMessage => messages.isNotEmpty ? messages.last : null;

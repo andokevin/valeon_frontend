@@ -266,9 +266,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                SizedBox(
-                                  width: 24,
-                                  height: 24,
+                                // ✅ CORRECTION : Encapsuler le Checkbox dans un Material
+                                Material(
+                                  color: Colors.transparent,
                                   child: Checkbox(
                                     value: _acceptTerms,
                                     onChanged: (value) {

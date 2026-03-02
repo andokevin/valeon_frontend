@@ -23,6 +23,14 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickFromCamera() async {
+    final connectivity =
+        Provider.of<ConnectivityProvider>(context, listen: false);
+
+    if (!connectivity.isOnline) {
+      _showError('Connexion internet requise pour scanner');
+      return;
+    }
+
     final img = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 85,
@@ -34,6 +42,14 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
   }
 
   Future<void> _pickFromGallery() async {
+    final connectivity =
+        Provider.of<ConnectivityProvider>(context, listen: false);
+
+    if (!connectivity.isOnline) {
+      _showError('Connexion internet requise pour scanner');
+      return;
+    }
+
     final img = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 85,
@@ -67,6 +83,16 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
     });
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scanState = Provider.of<ScanProvider>(context);
@@ -89,8 +115,6 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
           : Column(
               children: [
                 const Spacer(),
-
-                // Bannière hors ligne
                 if (!connectivity.isOnline)
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -105,7 +129,7 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Mode hors ligne - Scan sauvegardé localement',
+                            'Connexion internet requise pour scanner',
                             style: TextStyle(color: Colors.orange),
                           ),
                         ),
@@ -113,8 +137,6 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
                     ),
                   ),
                 if (!connectivity.isOnline) const SizedBox(height: 24),
-
-                // Aperçu de l'image
                 if (_selectedImage != null) ...[
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
@@ -153,13 +175,12 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
                   ),
                   const SizedBox(height: 24),
                 ],
-
-                // Boutons d'action
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: _pickFromCamera,
+                        onPressed:
+                            connectivity.isOnline ? _pickFromCamera : null,
                         icon: const Icon(Icons.camera_alt),
                         label: const Text('Appareil photo'),
                         style: ElevatedButton.styleFrom(
@@ -170,12 +191,19 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: _pickFromGallery,
+                        onPressed:
+                            connectivity.isOnline ? _pickFromGallery : null,
                         icon: const Icon(Icons.photo_library),
                         label: const Text('Galerie'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primaryBlue,
-                          side: const BorderSide(color: AppColors.primaryBlue),
+                          foregroundColor: connectivity.isOnline
+                              ? AppColors.primaryBlue
+                              : Colors.grey,
+                          side: BorderSide(
+                            color: connectivity.isOnline
+                                ? AppColors.primaryBlue
+                                : Colors.grey,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
