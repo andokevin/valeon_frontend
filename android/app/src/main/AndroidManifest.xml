@@ -2,8 +2,9 @@
      <!-- 4. Permission Internet -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="valeon"
+        android:label="Valeon"
         android:name="${applicationName}"
+        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher">
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
