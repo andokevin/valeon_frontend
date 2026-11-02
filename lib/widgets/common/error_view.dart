@@ -29,7 +29,7 @@ class ErrorView extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: Colors.red.withOpacity(0.7),
+              color: Colors.red.withValues(alpha: 0.7),
               size: isTablet ? 80 : 60,
             ),
             const SizedBox(height: 16),

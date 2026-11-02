@@ -121,7 +121,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         );
       }
     } catch (e) {
-      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur: ${e.toString()}'),
@@ -168,17 +169,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
+                                    color: Colors.white.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
-                                        color: Colors.white.withOpacity(0.2)),
+                                        color: Colors.white.withValues(alpha: 0.2)),
                                   ),
                                   child: Row(
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: color.withOpacity(0.2),
+                                          color: color.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Icon(icon, color: color),
@@ -233,11 +234,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                         decoration: BoxDecoration(
                                           color: scan.status ==
                                                   ScanStatus.completed
-                                              ? Colors.green.withOpacity(0.2)
+                                              ? Colors.green.withValues(alpha: 0.2)
                                               : scan.status == ScanStatus.failed
-                                                  ? Colors.red.withOpacity(0.2)
+                                                  ? Colors.red.withValues(alpha: 0.2)
                                                   : Colors.orange
-                                                      .withOpacity(0.2),
+                                                      .withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Text(

@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:valeon/providers/connectivity_provider.dart';
 import '../../config/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/app_links.dart';
 import '../../widgets/layout/space_background.dart';
-import 'settings_screen.dart';
 import 'premium_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -116,7 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 border: Border.all(color: Colors.white, width: 3),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryBlue.withOpacity(0.4),
+                    color: AppColors.primaryBlue.withValues(alpha: 0.4),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -191,9 +191,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -236,14 +236,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: auth.isPremium
-              ? [AppColors.premium, AppColors.premium.withOpacity(0.7)]
+              ? [AppColors.premium, AppColors.premium.withValues(alpha: 0.7)]
               : [AppColors.primaryBlue, AppColors.lightPurple],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: (auth.isPremium ? AppColors.premium : AppColors.primaryBlue)
-                .withOpacity(0.3),
+                .withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -275,7 +275,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ? 'Scans illimités, sans pub, IA avancée'
                       : '5 scans/jour, 50 scans/mois',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: isTablet ? 14 : 12,
                   ),
                 ),
@@ -306,27 +306,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       children: [
         _buildMenuItem(
-          icon: Icons.notifications,
-          label: 'Notifications',
-          onTap: () {},
-        ),
-        const SizedBox(height: 8),
-        _buildMenuItem(
           icon: Icons.help,
           label: 'Aide & Support',
-          onTap: () {},
+          onTap: () => AppLinks.contactSupport(context),
         ),
         const SizedBox(height: 8),
         _buildMenuItem(
           icon: Icons.privacy_tip,
           label: 'Confidentialité',
-          onTap: () {},
+          onTap: () => AppLinks.open(context, AppLinks.privacyPolicy),
         ),
         const SizedBox(height: 8),
         _buildMenuItem(
           icon: Icons.info,
           label: 'À propos',
-          onTap: () {},
+          onTap: () => AppLinks.showAbout(context),
         ),
       ],
     );
@@ -342,9 +336,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -401,7 +395,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
 
-        if (confirm == true) {
+        if (confirm == true && context.mounted) {
           final auth = Provider.of<AuthProvider>(context, listen: false);
           await auth.signOut();
         }
@@ -410,9 +404,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.1),
+          color: Colors.red.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.red.withOpacity(0.3)),
+          border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -284,7 +284,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ? AppColors.primaryBlue
                     : (isDark
                         ? AppColors.darkSurface
-                        : Colors.white.withOpacity(0.15)),
+                        : Colors.white.withValues(alpha: 0.15)),
                 borderRadius: BorderRadius.circular(20).copyWith(
                   bottomLeft: isUser ? null : const Radius.circular(4),
                   bottomRight: isUser ? const Radius.circular(4) : null,
@@ -294,7 +294,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     : Border.all(
                         color: isDark
                             ? AppColors.darkDivider
-                            : Colors.white.withOpacity(0.2)),
+                            : Colors.white.withValues(alpha: 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -313,7 +313,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     _formatTime(message.timestamp),
                     style: TextStyle(
                       color: isUser
-                          ? Colors.white.withOpacity(0.7)
+                          ? Colors.white.withValues(alpha: 0.7)
                           : (isDark
                               ? AppColors.darkTextSecondary
                               : Colors.white70),
@@ -333,7 +333,7 @@ class _ChatScreenState extends State<ChatScreen> {
               decoration: BoxDecoration(
                 color: isDark
                     ? AppColors.darkSurface
-                    : Colors.white.withOpacity(0.2),
+                    : Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.person,
@@ -351,11 +351,11 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: EdgeInsets.all(ResponsiveHelper.paddingScreen(context)),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white.withOpacity(0.1),
+        color: isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.1),
         border: Border(
           top: BorderSide(
             color:
-                isDark ? AppColors.darkDivider : Colors.white.withOpacity(0.2),
+                isDark ? AppColors.darkDivider : Colors.white.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -367,7 +367,7 @@ class _ChatScreenState extends State<ChatScreen> {
               decoration: BoxDecoration(
                 color: isDark
                     ? AppColors.darkBackground
-                    : Colors.white.withOpacity(0.15),
+                    : Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(30),
                 // ===== SUPPRESSION DE border =====
                 // La ligne suivante a été supprimée pour enlever la bordure

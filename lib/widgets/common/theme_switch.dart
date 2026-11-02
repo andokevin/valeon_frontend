@@ -25,7 +25,7 @@ class ThemeSwitch extends StatelessWidget {
             decoration: BoxDecoration(
               color: themeProvider.isDarkMode
                   ? AppColors.darkSurface
-                  : Colors.white.withOpacity(0.2),
+                  : Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(

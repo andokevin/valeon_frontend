@@ -235,21 +235,16 @@ class LibraryProvider extends ChangeNotifier {
     }
   }
 
+  // Lève une exception en cas d'échec pour que l'écran puisse l'afficher
   Future<void> removeFromPlaylist(int playlistId, int contentId) async {
-    try {
-      if (!_connectivity.isOnline) {
-        _errorMessage = 'Connexion internet requise';
-        notifyListeners();
-        return;
-      }
-
-      debugPrint('➖ Retrait contenu $contentId de la playlist $playlistId');
-      // Note: Cette fonctionnalité nécessite un endpoint API dédié
-      await _service.getPlaylist(playlistId);
-      notifyListeners();
-    } catch (e) {
-      debugPrint('❌ Erreur suppression de la playlist: $e');
+    if (!_connectivity.isOnline) {
+      throw Exception('Connexion internet requise');
     }
+
+    debugPrint('➖ Retrait contenu $contentId de la playlist $playlistId');
+    await _service.removeFromPlaylist(playlistId, contentId);
+    _playlists = await _service.getPlaylists();
+    notifyListeners();
   }
 
   // ===== HISTORIQUE =====

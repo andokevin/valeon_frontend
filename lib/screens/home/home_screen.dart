@@ -6,7 +6,6 @@ import '../../config/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/recommendation_provider.dart';
 import '../../providers/connectivity_provider.dart';
-import '../../widgets/home/scan_action_card.dart';
 import '../../widgets/home/trending_section.dart';
 import '../../widgets/home/recommendation_section.dart';
 import '../../widgets/layout/space_background.dart';
@@ -121,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryBlue.withOpacity(0.3),
+                  color: AppColors.primaryBlue.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -151,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.pushNamed(context, '/premium');
                 },
                 style: TextButton.styleFrom(
-                  backgroundColor: AppColors.premium.withOpacity(0.2),
+                  backgroundColor: AppColors.premium.withValues(alpha: 0.2),
                   foregroundColor: AppColors.premium,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -376,15 +375,15 @@ class _HomeScreenState extends State<HomeScreen> {
           vertical: isTablet ? 18 : 14,
         ),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
+          color: Colors.white.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: Colors.white.withOpacity(0.3)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
             Icon(
               Icons.search,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               size: isTablet ? 26 : 22,
             ),
             SizedBox(width: isTablet ? 16 : 12),
@@ -467,9 +466,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -477,10 +476,10 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: _getTypeColor(item.contentType).withOpacity(0.3),
+                color: _getTypeColor(item.contentType).withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _getTypeColor(item.contentType).withOpacity(0.5),
+                  color: _getTypeColor(item.contentType).withValues(alpha: 0.5),
                 ),
               ),
               child: Icon(

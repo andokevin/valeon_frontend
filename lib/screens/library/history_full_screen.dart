@@ -8,7 +8,7 @@ import '../../providers/library_provider.dart';
 import '../../providers/connectivity_provider.dart';
 import '../../widgets/layout/space_background.dart';
 import '../scan/scan_result_screen.dart';
-import '../../models/favorite_model.dart'; // ← AJOUT
+// ← AJOUT
 
 class HistoryFullScreen extends StatefulWidget {
   const HistoryFullScreen({super.key});
@@ -201,7 +201,8 @@ class _HistoryFullScreenState extends State<HistoryFullScreen> {
         );
       }
     } catch (e) {
-      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur: ${e.toString()}'),
@@ -260,12 +261,12 @@ class _HistoryFullScreenState extends State<HistoryFullScreen> {
                                       decoration: BoxDecoration(
                                         color: isDark 
                                             ? AppColors.darkSurface
-                                            : Colors.white.withOpacity(0.1),
+                                            : Colors.white.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(16),
                                         border: Border.all(
                                           color: isDark 
                                               ? AppColors.darkDivider
-                                              : Colors.white.withOpacity(0.2),
+                                              : Colors.white.withValues(alpha: 0.2),
                                         ),
                                       ),
                                       child: Row(
@@ -274,7 +275,7 @@ class _HistoryFullScreenState extends State<HistoryFullScreen> {
                                           Container(
                                             padding: const EdgeInsets.all(12),
                                             decoration: BoxDecoration(
-                                              color: color.withOpacity(0.2),
+                                              color: color.withValues(alpha: 0.2),
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                             child: Icon(icon, color: color),

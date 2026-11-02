@@ -5,7 +5,6 @@ import '../../config/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../providers/connectivity_provider.dart';
-import '../../widgets/library/content_list_tile.dart';
 import '../scan/scan_result_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -253,12 +252,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         decoration: BoxDecoration(
           color: isDark 
               ? AppColors.darkSurface
-              : Colors.white.withOpacity(0.1),
+              : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDark 
                 ? AppColors.darkDivider
-                : Colors.white.withOpacity(0.2),
+                : Colors.white.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -277,7 +276,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         return Container(
                           width: 80,
                           height: 80,
-                          color: typeColor.withOpacity(0.2),
+                          color: typeColor.withValues(alpha: 0.2),
                           child: Icon(
                             typeIcon,
                             color: typeColor,
@@ -290,7 +289,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         return Container(
                           width: 80,
                           height: 80,
-                          color: typeColor.withOpacity(0.1),
+                          color: typeColor.withValues(alpha: 0.1),
                           child: Center(
                             child: CircularProgressIndicator(
                               color: typeColor,
@@ -303,7 +302,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   : Container(
                       width: 80,
                       height: 80,
-                      color: typeColor.withOpacity(0.2),
+                      color: typeColor.withValues(alpha: 0.2),
                       child: Icon(
                         typeIcon,
                         color: typeColor,
@@ -402,7 +401,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: typeColor.withOpacity(0.2),
+                          color: typeColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(

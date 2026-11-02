@@ -77,7 +77,7 @@ class StarsPainter extends CustomPainter {
           (0.5 + 0.5 * math.sin(animationValue * 2 * math.pi + i));
       final radius = 1.0 + random.nextDouble() * 2.0;
 
-      paint.color = Colors.white.withOpacity(opacity);
+      paint.color = Colors.white.withValues(alpha: opacity);
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }

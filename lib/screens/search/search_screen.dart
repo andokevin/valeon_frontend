@@ -1,10 +1,7 @@
 // lib/screens/search/search_screen.dart (MODIFIÉ - suppression bordure)
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../config/app_theme.dart';
-import '../../providers/auth_provider.dart';
 import '../../services/search_service.dart';
-import '../../widgets/layout/space_background.dart';
 import '../scan/scan_result_screen.dart';
 import '../../widgets/common/theme_switch.dart';
 
@@ -80,6 +77,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   List<Map<String, dynamic>>.from(results['results'] ?? []);
               _isLoading = false;
             });
+            if (results['error'] != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(results['error'])),
+              );
+            }
           }
         }
       });
@@ -158,8 +160,8 @@ class _SearchScreenState extends State<SearchScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: isDark
-                    ? AppColors.darkSurface.withOpacity(0.8)
-                    : Colors.white.withOpacity(0.95),
+                    ? AppColors.darkSurface.withValues(alpha: 0.8)
+                    : Colors.white.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(30),
                 // ===== SUPPRESSION DE border =====
                 // border: Border.all(...),  // Supprimé
@@ -239,7 +241,7 @@ class _SearchScreenState extends State<SearchScreen> {
             selected: isSelected,
             onSelected: (_) => _filterByType(filter['value']),
             backgroundColor:
-                isDark ? AppColors.darkSurface : Colors.white.withOpacity(0.1),
+                isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.1),
             selectedColor: AppColors.primaryBlue,
             labelStyle: TextStyle(
               color: isSelected
@@ -311,11 +313,11 @@ class _SearchScreenState extends State<SearchScreen> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white.withOpacity(0.1),
+          color: isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
-                isDark ? AppColors.darkDivider : Colors.white.withOpacity(0.2),
+                isDark ? AppColors.darkDivider : Colors.white.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -351,11 +353,11 @@ class _SearchScreenState extends State<SearchScreen> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white.withOpacity(0.1),
+          color: isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
-                isDark ? AppColors.darkDivider : Colors.white.withOpacity(0.2),
+                isDark ? AppColors.darkDivider : Colors.white.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -375,7 +377,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withOpacity(0.2),
+                color: AppColors.primaryBlue.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -442,12 +444,12 @@ class _SearchScreenState extends State<SearchScreen> {
             decoration: BoxDecoration(
               color: isDark
                   ? AppColors.darkSurface
-                  : (cat['color'] as Color).withOpacity(0.2),
+                  : (cat['color'] as Color).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isDark
                     ? AppColors.darkDivider
-                    : (cat['color'] as Color).withOpacity(0.3),
+                    : (cat['color'] as Color).withValues(alpha: 0.3),
               ),
             ),
             child: Column(
@@ -566,11 +568,11 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white.withOpacity(0.1),
+          color: isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color:
-                isDark ? AppColors.darkDivider : Colors.white.withOpacity(0.2),
+                isDark ? AppColors.darkDivider : Colors.white.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -578,7 +580,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color),
@@ -626,7 +628,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.2),
+                            color: Colors.grey.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(

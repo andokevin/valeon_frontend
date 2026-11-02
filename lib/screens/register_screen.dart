@@ -52,6 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Provider.of<ConnectivityProvider>(context, listen: false);
 
     await connectivityProvider.checkConnection();
+    if (!mounted) return;
 
     if (!connectivityProvider.isOnline) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -127,7 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primaryBlue.withOpacity(0.5),
+                              color: AppColors.primaryBlue.withValues(alpha: 0.5),
                               blurRadius: 20,
                               spreadRadius: 5,
                             ),
@@ -163,11 +164,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.95),
+                          color: Colors.white.withValues(alpha: 0.95),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),

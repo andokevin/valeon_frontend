@@ -88,12 +88,22 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
       ),
     );
 
-    if (confirm == true) {
-      // À implémenter avec l'API
-      ScaffoldMessenger.of(context).showSnackBar(
+    if (confirm != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await library.removeFromPlaylist(widget.playlistId, contentId);
+      await _loadPlaylist();
+      messenger.showSnackBar(
         const SnackBar(
-          content: Text('Fonctionnalité à implémenter'),
-          backgroundColor: Colors.orange,
+          content: Text('Retiré de la playlist'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Impossible de retirer cet élément : $e'),
+          backgroundColor: Colors.red,
         ),
       );
     }

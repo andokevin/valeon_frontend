@@ -12,7 +12,7 @@ class RecommendationProvider extends ChangeNotifier {
   List<ContentModel> _personalized = [];
   List<ContentModel> _trending = [];
   List<ContentModel> _forYou = [];
-  Map<int, List<ContentModel>> _similarCache = {}; // Cache pour les similaires
+  final Map<int, List<ContentModel>> _similarCache = {}; // Cache pour les similaires
   bool _isLoading = false;
   String? _errorMessage;
 

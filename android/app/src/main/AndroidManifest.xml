@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
      <!-- 4. Permission Internet -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Enregistrement audio pour le scan (plugin record) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
         android:label="Valeon"
         android:name="${applicationName}"
@@ -65,6 +67,15 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- url_launcher : ouvrir des liens web et des e-mails -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
         </intent>
         <!-- Android 11+ : permet de détecter l'app Facebook pour la connexion -->
         <package android:name="com.facebook.katana" />

@@ -105,6 +105,14 @@ class LibraryService {
     }
   }
 
+  Future<void> removeFromPlaylist(int playlistId, int contentId) async {
+    try {
+      await _api.delete('/library/playlists/$playlistId/remove/$contentId');
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
+    }
+  }
+
   // ===== HISTORIQUE =====
   Future<List<ScanModel>> getHistory({int skip = 0, int limit = 50}) async {
     try {

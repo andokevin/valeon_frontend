@@ -6,7 +6,6 @@ import '../../providers/auth_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../providers/connectivity_provider.dart';
 import '../../widgets/layout/space_background.dart';
-import '../../widgets/library/content_list_tile.dart';
 import 'favorites_screen.dart';
 import 'playlists_screen.dart';
 import 'history_full_screen.dart';
@@ -257,13 +256,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
                             color: isDark 
-                                ? AppColors.darkSurface.withOpacity(0.5)
-                                : Colors.white.withOpacity(0.1),
+                                ? AppColors.darkSurface.withValues(alpha: 0.5)
+                                : Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isDark 
                                   ? AppColors.darkDivider
-                                  : Colors.white.withOpacity(0.2),
+                                  : Colors.white.withValues(alpha: 0.2),
                             ),
                           ),
                           child: const Center(
@@ -382,12 +381,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
       decoration: BoxDecoration(
         color: isDark 
             ? AppColors.darkSurface
-            : Colors.white.withOpacity(0.1),
+            : Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark 
               ? AppColors.darkDivider
-              : Colors.white.withOpacity(0.2),
+              : Colors.white.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -431,7 +430,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color, size: isTablet ? 28 : 24),
@@ -478,12 +477,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
           decoration: BoxDecoration(
             color: isDark 
                 ? AppColors.darkSurface
-                : Colors.white.withOpacity(0.1),
+                : Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isDark 
                   ? AppColors.darkDivider
-                  : Colors.white.withOpacity(0.2),
+                  : Colors.white.withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -491,7 +490,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: isTablet ? 30 : 24),
@@ -585,12 +584,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
         decoration: BoxDecoration(
           color: isDark 
               ? AppColors.darkSurface
-              : Colors.white.withOpacity(0.1),
+              : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDark 
                 ? AppColors.darkDivider
-                : Colors.white.withOpacity(0.2),
+                : Colors.white.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -600,7 +599,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: typeColor.withOpacity(0.2),
+                color: typeColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -647,7 +646,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: typeColor.withOpacity(0.2),
+                          color: typeColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(

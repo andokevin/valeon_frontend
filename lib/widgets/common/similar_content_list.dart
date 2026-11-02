@@ -1,5 +1,6 @@
 // lib/widgets/common/similar_content_list.dart
 import 'package:flutter/material.dart';
+import '../../utils/app_links.dart';
 import '../common/cached_image.dart';
 
 class SimilarContentList extends StatelessWidget {
@@ -53,16 +54,24 @@ class SimilarContentList extends StatelessWidget {
     final image = item is Map ? (item['image'] ?? item['thumbnail'] ?? '') : '';
     final year = item is Map ? (item['year'] ?? '') : '';
 
+    // Lien d'écoute / de visionnage fourni par l'API de recommandations
+    String? link;
+    if (item is Map) {
+      if (item['youtube_url'] != null) {
+        link = item['youtube_url'];
+      } else if (item['spotify_id'] != null) {
+        link = 'https://open.spotify.com/track/${item['spotify_id']}';
+      }
+    }
+
     return GestureDetector(
-      onTap: () {
-        // TODO: Naviguer vers le détail de cet élément
-      },
+      onTap: link == null ? null : () => AppLinks.open(context, link!),
       child: Container(
         width: 120,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

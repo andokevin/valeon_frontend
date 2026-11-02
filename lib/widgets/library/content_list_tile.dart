@@ -31,9 +31,9 @@ class ContentListTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -46,7 +46,7 @@ class ContentListTile extends StatelessWidget {
                 placeholder: Container(
                   width: 52,
                   height: 52,
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   child: Icon(icon, color: color, size: 24),
                 ),
               ),
@@ -130,7 +130,7 @@ class ContentListTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(

@@ -79,6 +79,7 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
         builder: (context) => ScanResultScreen(scanResult: scan.result),
       ),
     ).then((_) {
+      if (!mounted) return;
       Provider.of<ScanProvider>(context, listen: false).reset();
     });
   }
@@ -97,12 +98,7 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
   Widget build(BuildContext context) {
     final scanState = Provider.of<ScanProvider>(context);
     final connectivity = Provider.of<ConnectivityProvider>(context);
-
-    if (scanState.phase == ScanPhase.done && scanState.result != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _navigateToResult(scanState.result!);
-      });
-    }
+    // La navigation vers le résultat est faite une seule fois, à la fin de _startScan
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -119,7 +115,7 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.2),
+                      color: Colors.orange.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.orange),
                     ),
@@ -156,7 +152,7 @@ class _ScanImageScreenState extends State<ScanImageScreen> {
                       color: AppColors.surfaceVariant,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.primaryBlue.withOpacity(0.3),
+                        color: AppColors.primaryBlue.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),

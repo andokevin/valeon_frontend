@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:valeon/models/content_model.dart';
-import 'package:valeon/models/playlist_model.dart';
 import '../../config/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/library_provider.dart';
@@ -11,7 +10,6 @@ import '../../providers/scan_provider.dart';
 import '../../providers/connectivity_provider.dart';
 import '../../widgets/common/cached_image.dart';
 import '../../services/api_service.dart';
-import '../../utils/date_utils.dart';
 
 class ScanResultScreen extends StatefulWidget {
   final int? scanId;
@@ -248,6 +246,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         return;
       }
 
+      if (!mounted) return;
       final library = Provider.of<LibraryProvider>(context, listen: false);
       final historyScan = await library.getScanDetails(scanId);
 
@@ -528,7 +527,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   }
 
   Widget _buildAddToPlaylistButton(BuildContext context, int contentId, bool isDark) {
-    if (contentId == null || contentId == 0) {
+    if (contentId == 0) {
       return const SizedBox();
     }
     
@@ -697,7 +696,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
             leading: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -735,7 +734,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                        colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
                       ),
                     ),
                   ),
@@ -756,7 +755,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _getConfidenceColor(confidence).withOpacity(0.15),
+                          color: _getConfidenceColor(confidence).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -882,12 +881,12 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                         decoration: BoxDecoration(
                           color: isDark
                               ? AppColors.darkSurface
-                              : Colors.white.withOpacity(0.1),
+                              : Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                               color: isDark
                                   ? AppColors.darkDivider
-                                  : Colors.white.withOpacity(0.2)),
+                                  : Colors.white.withValues(alpha: 0.2)),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -904,7 +903,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                                         return Container(
                                           width: 60,
                                           height: 60,
-                                          color: (isMusic ? AppColors.primaryBlue : Colors.orange).withOpacity(0.2),
+                                          color: (isMusic ? AppColors.primaryBlue : Colors.orange).withValues(alpha: 0.2),
                                           child: Icon(
                                             isMusic ? Icons.music_note : Icons.movie,
                                             color: isMusic ? AppColors.primaryBlue : Colors.orange,
@@ -916,7 +915,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                                   : Container(
                                       width: 60,
                                       height: 60,
-                                      color: (isMusic ? AppColors.primaryBlue : Colors.orange).withOpacity(0.2),
+                                      color: (isMusic ? AppColors.primaryBlue : Colors.orange).withValues(alpha: 0.2),
                                       child: Icon(
                                         isMusic ? Icons.music_note : Icons.movie,
                                         color: isMusic ? AppColors.primaryBlue : Colors.orange,
@@ -987,7 +986,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                         ),
                       ),
                     );
-                  }).toList(),
+                  }),
                   const SizedBox(height: 16),
                 ] else if (_loadingSimilar) ...[
                   const Center(
@@ -1047,9 +1046,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1133,7 +1132,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(

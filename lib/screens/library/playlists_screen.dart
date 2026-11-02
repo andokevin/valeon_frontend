@@ -132,17 +132,17 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
+                                  color: Colors.white.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                      color: Colors.white.withOpacity(0.2)),
+                                      color: Colors.white.withValues(alpha: 0.2)),
                                 ),
                                 child: Row(
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: Colors.purple.withOpacity(0.2),
+                                        color: Colors.purple.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: const Icon(

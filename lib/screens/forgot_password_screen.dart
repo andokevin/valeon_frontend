@@ -33,6 +33,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Provider.of<ConnectivityProvider>(context, listen: false);
 
     await connectivityProvider.checkConnection();
+    if (!mounted) return;
 
     if (!connectivityProvider.isOnline) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -130,7 +131,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.95),
+              color: Colors.white.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(24),
             ),
             child: Column(
@@ -173,7 +174,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             width: isTablet ? 180 : 120,
             height: isTablet ? 180 : 120,
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.2),
+              color: Colors.green.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(

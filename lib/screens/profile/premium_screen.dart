@@ -78,7 +78,7 @@ class PremiumScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.premium.withOpacity(0.3),
+            color: AppColors.premium.withValues(alpha: 0.3),
             blurRadius: 15,
             spreadRadius: 2,
           ),
@@ -89,7 +89,7 @@ class PremiumScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -157,9 +157,9 @@ class PremiumScreen extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.premium.withOpacity(0.3)),
+            border: Border.all(color: AppColors.premium.withValues(alpha: 0.3)),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,7 +167,7 @@ class PremiumScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.premium.withOpacity(0.2),
+                  color: AppColors.premium.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -250,16 +250,16 @@ class PremiumScreen extends StatelessWidget {
           gradient: isPopular
               ? LinearGradient(
                   colors: [
-                    AppColors.premium.withOpacity(0.2),
-                    AppColors.premium.withOpacity(0.1),
+                    AppColors.premium.withValues(alpha: 0.2),
+                    AppColors.premium.withValues(alpha: 0.1),
                   ],
                 )
               : null,
-          color: isPopular ? null : Colors.white.withOpacity(0.1),
+          color: isPopular ? null : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
-                isPopular ? AppColors.premium : Colors.white.withOpacity(0.2),
+                isPopular ? AppColors.premium : Colors.white.withValues(alpha: 0.2),
             width: isPopular ? 2 : 1,
           ),
         ),

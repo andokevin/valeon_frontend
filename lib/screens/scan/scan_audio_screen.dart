@@ -2,7 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:valeon/models/scan_model.dart';
@@ -59,11 +59,15 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
     }
   }
 
+  // Fichiers audio uniquement, aux formats acceptés par l'API
   Future<void> _pickFile() async {
-    final picker = ImagePicker();
-    final file = await picker.pickMedia();
-    if (file != null) {
-      await _startScan(File(file.path));
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['mp3', 'wav', 'm4a', 'flac', 'aac'],
+    );
+    final path = picked?.files.single.path;
+    if (path != null) {
+      await _startScan(File(path));
     }
   }
 
@@ -94,6 +98,7 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
         builder: (context) => ScanResultScreen(scanResult: scan.result),
       ),
     ).then((_) {
+      if (!mounted) return;
       Provider.of<ScanProvider>(context, listen: false).reset();
     });
   }
@@ -114,12 +119,7 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
     final auth = Provider.of<AuthProvider>(context);
     final connectivity = Provider.of<ConnectivityProvider>(context);
     final isPremium = auth.isPremium;
-
-    if (scanState.phase == ScanPhase.done && scanState.result != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _navigateToResult(scanState.result!);
-      });
-    }
+    // La navigation vers le résultat est faite une seule fois, à la fin de _startScan
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -169,7 +169,7 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.2),
+                      color: Colors.orange.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.orange),
                     ),
@@ -207,7 +207,7 @@ class _ScanAudioScreenState extends State<ScanAudioScreen> {
                             color: (_isRecording
                                     ? Colors.red
                                     : AppColors.primaryBlue)
-                                .withOpacity(0.4),
+                                .withValues(alpha: 0.4),
                             blurRadius: 24,
                             spreadRadius: 4,
                           ),

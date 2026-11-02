@@ -22,8 +22,9 @@ class SearchService {
       if (!_connectivity.isOnline) {
         return {
           'query': query,
-          'results': _getMockResults(query),
-          'total': 3,
+          'results': [],
+          'total': 0,
+          'error': 'Connexion internet requise pour rechercher',
         };
       }
 
@@ -46,10 +47,12 @@ class SearchService {
           };
     } catch (e) {
       debugPrint('❌ Erreur recherche: $e');
+      // Pas de faux résultats : l'utilisateur doit savoir que la recherche a échoué
       return {
         'query': query,
-        'results': _getMockResults(query),
-        'total': 3,
+        'results': [],
+        'total': 0,
+        'error': 'La recherche a échoué, réessayez',
       };
     }
   }
@@ -93,32 +96,6 @@ class SearchService {
       debugPrint('❌ Erreur trending: $e');
       return _getMockTrending();
     }
-  }
-
-  List<Map<String, dynamic>> _getMockResults(String query) {
-    return [
-      {
-        'title': 'Blinding Lights',
-        'type': 'music',
-        'artist': 'The Weeknd',
-        'year': '2019',
-        'source': 'mock',
-      },
-      {
-        'title': 'Inception',
-        'type': 'movie',
-        'artist': 'Christopher Nolan',
-        'year': '2010',
-        'source': 'mock',
-      },
-      {
-        'title': 'Heat Waves',
-        'type': 'music',
-        'artist': 'Glass Animals',
-        'year': '2020',
-        'source': 'mock',
-      },
-    ];
   }
 
   List<Map<String, dynamic>> _getMockTrending() {

@@ -58,6 +58,7 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
         builder: (context) => ScanResultScreen(scanResult: scan.result),
       ),
     ).then((_) {
+      if (!mounted) return;
       Provider.of<ScanProvider>(context, listen: false).reset();
     });
   }
@@ -87,7 +88,7 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
             Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: AppColors.premium.withOpacity(0.1),
+                color: AppColors.premium.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -137,12 +138,7 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
       );
     }
 
-    if (scanState.phase == ScanPhase.done && scanState.result != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _navigateToResult(scanState.result!);
-      });
-    }
-
+    // La navigation vers le résultat est faite une seule fois, à la fin du scan
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -152,7 +148,7 @@ class _ScanVideoScreenState extends State<ScanVideoScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.2),
+                color: Colors.orange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.orange),
               ),
