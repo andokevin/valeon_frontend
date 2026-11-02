@@ -14,19 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "193289204952-i4k64h5aqb4g93k427efcskr07a4sn33.apps.googleusercontent.com",
+          "client_id": "193289204952-c4i0450n5avpb0qkr5h0bb83tpafgjc4.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.app.valeon",
-            "certificate_hash": "11d49a1012768ec5d1da0b98f55f1d7346fd8361"
-          }
-        },
-        {
-          "client_id": "193289204952-nc8q9ov6pmm91hlja763fp2siu4hg6mv.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.app.valeon",
-            "certificate_hash": "33af83e25ca0d46ec74028ad1d4be825df88f9ee"
+            "certificate_hash": "7dfad138a8bb5a38fe16aad5f1a5c2b989692c97"
           }
         },
         {
