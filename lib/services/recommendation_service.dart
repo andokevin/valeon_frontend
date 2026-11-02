@@ -17,7 +17,7 @@ class RecommendationService {
       final response = await _api.get(
         '/recommendations/personalized',
         params: {
-          'limit': 20,
+          'limit': limit,
           if (contentType != null) 'content_type': contentType
         },
       );
@@ -53,10 +53,16 @@ class RecommendationService {
 
   Future<List<ContentModel>> getSimilar(int contentId, {int limit = 10}) async {
     try {
-      final response = await _api.get('/recommendations/similar/$contentId');
-      return (response.data as List)
-          .map((j) => ContentModel.fromJson(j))
-          .toList();
+      // L'API limite à 5 et renvoie {"recommendations": [...], ...}, pas une liste
+      final response = await _api.get('/recommendations/similar/$contentId',
+          params: {'limit': limit.clamp(1, 5)});
+      final data = response.data;
+      if (data is Map && data['recommendations'] is List) {
+        return (data['recommendations'] as List)
+            .map((j) => ContentModel.fromJson(j))
+            .toList();
+      }
+      return [];
     } on DioException catch (e) {
       throw AppException.fromDio(e);
     }

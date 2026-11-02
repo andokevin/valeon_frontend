@@ -1,18 +1,18 @@
 // lib/services/auth_service.dart
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
-import 'package:valeon/config/app_constants.dart';
 import '../core/errors/app_exception.dart';
 import '../core/network/api_client.dart';
 import '../models/auth_model.dart';
 import '../models/user_model.dart';
+import '../utils/secure_storage.dart';
 
 class AuthService {
   final ApiClient _api = ApiClient();
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  // Même stockage (et mêmes clés) que celui lu par ApiClient pour le header Authorization
+  final SecureStorage _storage = SecureStorage();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
@@ -163,26 +163,19 @@ class AuthService {
       await FacebookAuth.instance.logOut();
       await _firebaseAuth.signOut();
     } catch (_) {}
-    await _storage.deleteAll();
+    await _storage.clearAll();
   }
 
   Future<bool> isLoggedIn() async {
-    final token = await _storage.read(key: AppConstants.accessTokenKey);
+    final token = await _storage.getToken();
     return token != null;
   }
 
-  Future<String?> getAccessToken() =>
-      _storage.read(key: AppConstants.accessTokenKey);
+  Future<String?> getAccessToken() => _storage.getToken();
 
   Future<void> _saveTokens(AuthTokenModel token) async {
-    await _storage.write(
-      key: AppConstants.accessTokenKey,
-      value: token.accessToken,
-    );
-    await _storage.write(
-      key: AppConstants.refreshTokenKey,
-      value: token.refreshToken,
-    );
+    await _storage.saveToken(token.accessToken);
+    await _storage.saveRefreshToken(token.refreshToken);
   }
 
   Future<void> resetPassword(String email) async {

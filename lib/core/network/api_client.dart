@@ -10,13 +10,17 @@ class ApiClient {
   ApiClient._internal();
 
   late Dio dio;
+  // Dio sans intercepteur pour le refresh : un 401 sur le refresh ne doit pas
+  // redéclencher un refresh (sinon la requête reste bloquée indéfiniment).
+  late Dio _refreshDio;
   final SecureStorage _secureStorage = SecureStorage();
-  bool _isRefreshing = false;
-  final List<Map<String, dynamic>> _pendingRequests = [];
+  bool _initialized = false;
+  // Refresh en cours, partagé par toutes les requêtes qui reçoivent un 401
+  Future<bool>? _refreshFuture;
 
-  void init() {
-    dio = Dio(
-      BaseOptions(
+  static const String _retriedKey = 'auth_retried';
+
+  BaseOptions get _baseOptions => BaseOptions(
         baseUrl: AppConfig.apiBaseUrl,
         connectTimeout: const Duration(seconds: AppConfig.apiTimeout),
         receiveTimeout: const Duration(seconds: AppConfig.apiTimeout),
@@ -24,8 +28,15 @@ class ApiClient {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-      ),
-    );
+      );
+
+  // Appelé par chaque service : seul le premier appel crée les clients
+  void init() {
+    if (_initialized) return;
+    _initialized = true;
+
+    dio = Dio(_baseOptions);
+    _refreshDio = Dio(_baseOptions);
 
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: _onRequest,
@@ -44,34 +55,31 @@ class ApiClient {
 
   Future<void> _onError(
       DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401) {
-      final options = err.requestOptions;
+    final options = err.requestOptions;
+    final isAuthCall = options.path.startsWith('/auth/login') ||
+        options.path.startsWith('/auth/refresh-token');
 
-      if (!_isRefreshing) {
-        _isRefreshing = true;
-        try {
-          final success = await _refreshToken();
-          if (success) {
-            _isRefreshing = false;
-            _retryPendingRequests();
-
-            // Retry la requête originale
-            final token = await _secureStorage.getToken();
-            options.headers['Authorization'] = 'Bearer $token';
-            final response = await dio.fetch(options);
-            return handler.resolve(response);
-          }
-        } catch (e) {
-          _isRefreshing = false;
-          _pendingRequests.clear();
-        }
-      } else {
-        // Attendre et réessayer
-        _pendingRequests.add({'options': options, 'handler': handler});
-        return;
-      }
+    if (err.response?.statusCode != 401 ||
+        isAuthCall ||
+        options.extra[_retriedKey] == true) {
+      return handler.next(err);
     }
-    handler.next(err);
+
+    final refreshed = await (_refreshFuture ??=
+        _refreshToken().whenComplete(() => _refreshFuture = null));
+    if (!refreshed) {
+      return handler.next(err);
+    }
+
+    try {
+      final token = await _secureStorage.getToken();
+      options.headers['Authorization'] = 'Bearer $token';
+      options.extra[_retriedKey] = true;
+      final response = await dio.fetch(options);
+      handler.resolve(response);
+    } on DioException catch (e) {
+      handler.next(e);
+    }
   }
 
   Future<bool> _refreshToken() async {
@@ -79,7 +87,7 @@ class ApiClient {
       final refreshToken = await _secureStorage.getRefreshToken();
       if (refreshToken == null) return false;
 
-      final response = await dio.post(
+      final response = await _refreshDio.post(
         '/auth/refresh-token',
         data: {'refresh_token': refreshToken},
       );
@@ -95,20 +103,10 @@ class ApiClient {
       return false;
     } catch (e) {
       debugPrint('❌ Erreur refresh token: $e');
+      // Refresh expiré ou révoqué : la session n'est plus valide
+      await _secureStorage.deleteToken();
       return false;
     }
-  }
-
-  void _retryPendingRequests() {
-    for (var req in _pendingRequests) {
-      final options = req['options'] as RequestOptions;
-      final handler = req['handler'] as ErrorInterceptorHandler;
-      dio.fetch(options).then(
-            (response) => handler.resolve(response),
-            onError: (error) => handler.next(error as DioException),
-          );
-    }
-    _pendingRequests.clear();
   }
 
   // ===== MODIFICATION: Utilisation de 'params' au lieu de 'queryParameters' =====

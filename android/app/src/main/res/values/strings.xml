@@ -1,6 +1,6 @@
 <resources>
     <!-- Autres chaînes de caractères de votre app -->
-    <string name="app_name">VotreApp</string>
+    <string name="app_name">Valeon</string>
 
     <!-- Identifiants Facebook -->
     <string name="facebook_app_id">1409022630714902</string>

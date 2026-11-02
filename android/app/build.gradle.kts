@@ -1,8 +1,18 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Signature release lue depuis android/key.properties (jamais commité)
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -31,20 +41,20 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("../keystore/votre-cle-release.jks")
-            storePassword = "valeon"
-            keyAlias = "votre_alias"
-            keyPassword = "valeon"
+            if (keystorePropertiesFile.exists()) {
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
         }
-        // Supprimez ou modifiez cette section - elle n'existe pas par défaut
-        // create("debug") {
-        //     // Soit vous la supprimez, soit vous la configurez correctement
-        // }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            // Sans key.properties, on signe avec la clé debug pour que le build passe quand même
+            signingConfig = if (keystorePropertiesFile.exists())
+                signingConfigs.getByName("release") else signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
