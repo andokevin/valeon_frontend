@@ -30,6 +30,12 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
+    // Le contrôle Lint automatique des builds release télécharge ~150 Mo d'outils ;
+    // le code Dart est déjà vérifié par `flutter analyze`.
+    lint {
+        checkReleaseBuilds = false
+    }
+
     defaultConfig {
         applicationId = "com.app.valeon"
         minSdk = flutter.minSdkVersion
