@@ -13,19 +13,12 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, auth, child) {
-        switch (auth.status) {
-          case AuthStatus.loading:
-          case AuthStatus.initial:
-            return const SplashScreen();
-
-          case AuthStatus.authenticated:
-            // ✅ Plus de synchronisation automatique
-            return const MainNavigation();
-
-          case AuthStatus.unauthenticated:
-          case AuthStatus.error:
-            return const LoginScreen();
-        }
+        // Écran de démarrage uniquement pendant la vérification de session au lancement.
+        // Pendant une connexion, on garde l'écran de login affiché (bouton en chargement,
+        // message d'erreur) au lieu de le détruire.
+        if (!auth.initialized) return const SplashScreen();
+        if (auth.status == AuthStatus.authenticated) return const MainNavigation();
+        return const LoginScreen();
       },
     );
   }

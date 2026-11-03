@@ -17,6 +17,9 @@ class AuthProvider extends ChangeNotifier {
   fb.User? _firebaseUser;
   AuthStatus _status = AuthStatus.initial;
   String? _errorMessage;
+  // Vrai une fois la session vérifiée au lancement (l'écran de démarrage ne sert qu'à ça)
+  bool _initialized = false;
+  bool get initialized => _initialized;
 
   UserModel? get user => _user;
   AuthStatus get status => _status;
@@ -62,6 +65,7 @@ class AuthProvider extends ChangeNotifier {
       _errorMessage = e.toString();
     }
 
+    _initialized = true;
     notifyListeners();
   }
 

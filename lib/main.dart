@@ -1,9 +1,9 @@
 // lib/main.dart (MODIFIÉ)
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'config/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/scan_provider.dart';
@@ -25,14 +25,13 @@ import 'screens/library/playlist_detail_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp();
-
-  await FacebookAuth.instance.webAndDesktopInitialize(
-    appId: "1409022630714902",
-    cookie: true,
-    xfbml: true,
-    version: "v18.0",
-  );
+  if (kIsWeb) {
+    // Version navigateur (tests dans Chrome) : pas de configuration Firebase Web,
+    // donc pas de connexion Google/Facebook ; e-mail + mot de passe fonctionnent.
+    debugPrint('ℹ️ Web : Firebase non initialisé (connexion Google/Facebook indisponible)');
+  } else {
+    await Firebase.initializeApp();
+  }
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

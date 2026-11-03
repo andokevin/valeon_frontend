@@ -30,6 +30,10 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// Ferme les écrans empilés (inscription, 2e login…) : la racine (AuthWrapper)
+  /// affiche l'accueil dès que l'utilisateur est connecté.
+  void _goHome() => Navigator.of(context).popUntil((route) => route.isFirst);
+
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -45,7 +49,9 @@ class _LoginScreenState extends State<LoginScreen> {
       password: _passwordController.text,
     );
 
-    if (!success && mounted) {
+    if (success && mounted) {
+      _goHome();
+    } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authProvider.errorMessage ?? 'Erreur de connexion'),
@@ -60,7 +66,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithGoogle();
 
-    if (!success && mounted) {
+    if (success && mounted) {
+      _goHome();
+    } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authProvider.errorMessage ?? 'Erreur Google'),
@@ -75,7 +83,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithFacebook();
 
-    if (!success && mounted) {
+    if (success && mounted) {
+      _goHome();
+    } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authProvider.errorMessage ?? 'Erreur Facebook'),

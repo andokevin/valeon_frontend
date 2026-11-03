@@ -79,6 +79,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      // Ferme l'écran d'inscription : la racine affiche l'accueil
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -321,14 +323,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   style: TextStyle(color: Colors.grey[600]),
                                 ),
                                 GestureDetector(
+                                  // Revenir au login existant (ne pas en empiler un second)
                                   onTap: () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const LoginScreen(),
-                                      ),
-                                    );
+                                    if (Navigator.canPop(context)) {
+                                      Navigator.pop(context);
+                                    } else {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const LoginScreen(),
+                                        ),
+                                      );
+                                    }
                                   },
                                   child: const Text(
                                     "Se connecter",

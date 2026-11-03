@@ -1,5 +1,7 @@
 // lib/services/auth_service.dart
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -13,8 +15,9 @@ class AuthService {
   final ApiClient _api = ApiClient();
   // Même stockage (et mêmes clés) que celui lu par ApiClient pour le header Authorization
   final SecureStorage _storage = SecureStorage();
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // Créés au premier usage : sur le web (sans Firebase), l'app démarre quand même
+  FirebaseAuth get _firebaseAuth => FirebaseAuth.instance;
+  late final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   AuthService() {
     _api.init();
@@ -59,7 +62,12 @@ class AuthService {
   }
 
   // ===== GOOGLE SIGN-IN =====
+  static const _webSocialMessage =
+      "Cette connexion est disponible dans l'application Android. "
+      'Dans le navigateur, utilisez votre e-mail et votre mot de passe.';
+
   Future<AuthTokenModel> loginWithGoogle() async {
+    if (kIsWeb) throw const AppException(_webSocialMessage);
     try {
       await _googleSignIn.signOut();
 
@@ -100,11 +108,34 @@ class AuthService {
       return token;
     } on DioException catch (e) {
       throw AppException.fromDio(e);
+    } on FirebaseAuthException catch (e) {
+      throw AppException('Firebase a refusé la connexion Google (${e.code})',
+          code: e.code);
+    } on PlatformException catch (e) {
+      throw AppException(_googleErrorMessage(e), code: e.code);
     }
+  }
+
+  /// Traduit les erreurs du sélecteur de compte Google (le code reste affiché)
+  String _googleErrorMessage(PlatformException e) {
+    final details = '${e.code} ${e.message ?? ''}';
+    if (details.contains('ApiException: 10')) {
+      return "Connexion Google mal configurée (code 10) : l'empreinte SHA-1 de "
+          "cette version de l'app n'est pas enregistrée dans Firebase.";
+    }
+    if (details.contains('ApiException: 7') || e.code == 'network_error') {
+      return 'Connexion Google impossible : vérifiez votre connexion internet.';
+    }
+    if (details.contains('ApiException: 12500')) {
+      return 'Connexion Google impossible (code 12500) : vérifiez l\'e-mail '
+          "d'assistance dans les paramètres du projet Firebase.";
+    }
+    return 'Connexion Google impossible ($details)';
   }
 
   // ===== FACEBOOK SIGN-IN =====
   Future<AuthTokenModel> loginWithFacebook() async {
+    if (kIsWeb) throw const AppException(_webSocialMessage);
     try {
       final result = await FacebookAuth.instance.login(
         permissions: ['email', 'public_profile'],
