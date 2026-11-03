@@ -30,8 +30,16 @@ Google/Facebook ne marchera pas.
 L'adresse du backend est donnée au moment du build (demandez-la au propriétaire) :
 
 ```bash
-flutter build apk --release --dart-define=API_BASE_URL=https://ADRESSE-DU-BACKEND/api
+flutter build apk --release --android-skip-build-dependency-validation \
+  --dart-define=API_BASE_URL=https://ADRESSE-DU-BACKEND/api
 ```
+
+`--android-skip-build-dependency-validation` est nécessaire avec un Flutter récent (3.4x) :
+le projet utilise encore Gradle 8.11.1 / AGP 8.9.1 / Kotlin 2.1.0, plus anciens que les
+minimums vérifiés par Flutter, mais la compilation fonctionne avec ces versions.
+
+La première compilation télécharge environ 1,5 Go (Gradle, librairies Android, NDK) et peut
+prendre 15 à 30 minutes.
 
 Le fichier à partager est `build/app/outputs/flutter-apk/app-release.apk`.
 Envoyez ce fichier `.apk` directement (WhatsApp, Drive, câble…), pas via une
