@@ -38,13 +38,7 @@ class TrendingSection extends StatelessWidget {
         Navigator.pushNamed(
           context,
           '/scan/result',
-          arguments: {
-            'title': item.contentTitle,
-            'artist': item.contentArtist,
-            'type': item.contentType,
-            'image': item.contentImage,
-            'content_id': item.contentId,
-          },
+          arguments: {'scanResult': item.toScanResult()},
         );
       },
       child: Container(

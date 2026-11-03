@@ -1,224 +1,182 @@
-// lib/screens/profile/settings_screen.dart (CORRIGÉ - version simple)
+// lib/screens/profile/settings_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../config/app_theme.dart';
+import '../../providers/theme_provider.dart';
+import '../../utils/app_links.dart';
 import '../../widgets/layout/space_background.dart';
+import 'change_password_screen.dart';
+import 'edit_profile_screen.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
+  void _clearImageCache(BuildContext context) {
+    PaintingBinding.instance.imageCache
+      ..clear()
+      ..clearLiveImages();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Cache des images vidé')),
+    );
+  }
 
-class _SettingsScreenState extends State<SettingsScreen> {
-  bool _notifications = true;
-  bool _darkMode = false;
-  bool _autoSave = true;
-  bool _offlineMode = true;
-  String _language = 'Français';
-  String _quality = 'Haute';
+  void _push(BuildContext context, Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = ResponsiveHelper.isTablet(context);
+    final theme = Provider.of<ThemeProvider>(context);
     final hPadding = ResponsiveHelper.paddingScreen(context);
 
     return SpaceBackground(
-      child: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context, hPadding, isTablet),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(hPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSectionTitle('Préférences', isTablet),
-                    const SizedBox(height: 12),
-                    _buildSwitchTile(
-                      icon: Icons.notifications,
-                      iconColor: AppColors.primaryBlue,
-                      title: 'Notifications',
-                      subtitle: 'Recevoir des alertes',
-                      value: _notifications,
-                      onChanged: (v) => setState(() => _notifications = v),
-                    ),
-                    _buildSwitchTile(
-                      icon: Icons.dark_mode,
-                      iconColor: Colors.purple,
-                      title: 'Mode sombre',
-                      subtitle: 'Thème sombre de l\'application',
-                      value: _darkMode,
-                      onChanged: (v) => setState(() => _darkMode = v),
-                    ),
-                    _buildSwitchTile(
-                      icon: Icons.save,
-                      iconColor: Colors.green,
-                      title: 'Sauvegarde auto',
-                      subtitle: 'Sauvegarder automatiquement les scans',
-                      value: _autoSave,
-                      onChanged: (v) => setState(() => _autoSave = v),
-                    ),
-                    _buildSwitchTile(
-                      icon: Icons.wifi_off,
-                      iconColor: Colors.orange,
-                      title: 'Mode hors ligne',
-                      subtitle: 'Accéder aux données sans internet',
-                      value: _offlineMode,
-                      onChanged: (v) => setState(() => _offlineMode = v),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('Application', isTablet),
-                    const SizedBox(height: 12),
-                    _buildDropdownTile(
-                      icon: Icons.language,
-                      iconColor: AppColors.primaryBlue,
-                      title: 'Langue',
-                      value: _language,
-                      items: ['Français', 'English', 'Español', 'Deutsch'],
-                      onChanged: (v) => setState(() => _language = v!),
-                    ),
-                    _buildDropdownTile(
-                      icon: Icons.high_quality,
-                      iconColor: Colors.purple,
-                      title: 'Qualité scan',
-                      value: _quality,
-                      items: ['Basse', 'Moyenne', 'Haute'],
-                      onChanged: (v) => setState(() => _quality = v!),
-                    ),
-                    _buildNavTile(
-                      icon: Icons.storage,
-                      iconColor: Colors.orange,
-                      title: 'Stockage',
-                      subtitle: '245 Mo utilisés',
-                      onTap: () {},
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('À propos', isTablet),
-                    const SizedBox(height: 12),
-                    _buildNavTile(
-                      icon: Icons.info,
-                      iconColor: AppColors.primaryBlue,
-                      title: 'Version',
-                      subtitle: '2.0.0',
-                      onTap: () {},
-                    ),
-                    _buildNavTile(
-                      icon: Icons.description,
-                      iconColor: Colors.green,
-                      title: 'Conditions d\'utilisation',
-                      subtitle: 'Lire les conditions',
-                      onTap: () {},
-                    ),
-                    _buildNavTile(
-                      icon: Icons.privacy_tip,
-                      iconColor: Colors.purple,
-                      title: 'Politique de confidentialité',
-                      subtitle: 'Comment nous protégeons vos données',
-                      onTap: () {},
-                    ),
-                    const SizedBox(height: 40),
-                  ],
-                ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(title: const Text('Paramètres')),
+        body: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.all(hPadding),
+            children: [
+              _sectionTitle('Apparence'),
+              _switchTile(
+                icon: Icons.dark_mode,
+                iconColor: Colors.indigoAccent,
+                title: 'Mode sombre',
+                subtitle: theme.isDarkMode ? 'Activé' : 'Désactivé',
+                value: theme.isDarkMode,
+                onChanged: (_) => theme.toggleTheme(),
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              _sectionTitle('Compte'),
+              _navTile(
+                icon: Icons.person_outline,
+                iconColor: AppColors.primaryBlue,
+                title: 'Modifier le profil',
+                subtitle: 'Nom affiché',
+                onTap: () => _push(context, const EditProfileScreen()),
+              ),
+              _navTile(
+                icon: Icons.lock_outline,
+                iconColor: Colors.orange,
+                title: 'Mot de passe',
+                subtitle: 'Changer votre mot de passe',
+                onTap: () => _push(context, const ChangePasswordScreen()),
+              ),
+              _navTile(
+                icon: Icons.delete_outline,
+                iconColor: Colors.redAccent,
+                title: 'Supprimer mon compte',
+                subtitle: 'Supprimer le compte et toutes ses données',
+                onTap: () => AppLinks.open(context, AppLinks.deleteAccount),
+              ),
+              const SizedBox(height: 24),
+              _sectionTitle('Données'),
+              _navTile(
+                icon: Icons.cleaning_services_outlined,
+                iconColor: Colors.teal,
+                title: 'Vider le cache des images',
+                subtitle: 'Libère la mémoire utilisée par les pochettes',
+                onTap: () => _clearImageCache(context),
+              ),
+              const SizedBox(height: 24),
+              _sectionTitle('À propos'),
+              _navTile(
+                icon: Icons.info_outline,
+                iconColor: AppColors.primaryBlue,
+                title: 'Version',
+                subtitle: AppLinks.appVersion,
+                onTap: () => AppLinks.showAbout(context),
+              ),
+              _navTile(
+                icon: Icons.public,
+                iconColor: Colors.green,
+                title: 'Site web',
+                subtitle: 'Présentation de Valeon',
+                onTap: () => AppLinks.open(context, AppLinks.website),
+              ),
+              _navTile(
+                icon: Icons.privacy_tip_outlined,
+                iconColor: Colors.purpleAccent,
+                title: 'Politique de confidentialité',
+                subtitle: 'Comment nous protégeons vos données',
+                onTap: () => AppLinks.open(context, AppLinks.privacyPolicy),
+              ),
+              _navTile(
+                icon: Icons.mail_outline,
+                iconColor: Colors.amber,
+                title: 'Contacter le support',
+                subtitle: AppLinks.supportEmail,
+                onTap: () => AppLinks.contactSupport(context),
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, double hPadding, bool isTablet) {
-    return Padding(
-      padding: EdgeInsets.all(hPadding),
-      child: Row(
+  Widget _sectionTitle(String title) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.white70,
+          ),
+        ),
+      );
+
+  BoxDecoration get _tileDecoration => BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      );
+
+  Widget _leadingIcon(IconData icon, Color color) => Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      );
+
+  Widget _texts(String title, String subtitle) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-          ),
-          const Expanded(
-            child: Text(
-              'Paramètres',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(width: 48),
+          Text(title,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
+          Text(subtitle,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
         ],
-      ),
-    );
-  }
+      );
 
-  Widget _buildSectionTitle(String title, bool isTablet) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: isTablet ? 16 : 14,
-        fontWeight: FontWeight.w600,
-        color: Colors.white70,
-      ),
-    );
-  }
-
-  Widget _buildSwitchTile({
+  Widget _switchTile({
     required IconData icon,
     required Color iconColor,
     required String title,
     required String subtitle,
     required bool value,
-    required Function(bool) onChanged,
+    required ValueChanged<bool> onChanged,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: _tileDecoration,
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
+          _leadingIcon(icon, iconColor),
           const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
+          Expanded(child: _texts(title, subtitle)),
           Switch(
             value: value,
             onChanged: onChanged,
@@ -229,127 +187,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDropdownTile({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String value,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          DropdownButton<String>(
-            value: value,
-            dropdownColor: AppColors.surface,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
-            underline: const SizedBox(),
-            icon: const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 20),
-            items: items.map((item) {
-              return DropdownMenuItem(
-                value: item,
-                child: Text(
-                  item,
-                  style: const TextStyle(fontSize: 13),
-                ),
-              );
-            }).toList(),
-            onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavTile({
+  Widget _navTile({
     required IconData icon,
     required Color iconColor,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: iconColor, size: 20),
+          child: Ink(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: _tileDecoration,
+            child: Row(
+              children: [
+                _leadingIcon(icon, iconColor),
+                const SizedBox(width: 12),
+                Expanded(child: _texts(title, subtitle)),
+                const Icon(Icons.arrow_forward_ios,
+                    color: Colors.white54, size: 14),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.white54,
-              size: 14,
-            ),
-          ],
+          ),
         ),
       ),
     );

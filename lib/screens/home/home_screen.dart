@@ -10,8 +10,8 @@ import '../../widgets/home/trending_section.dart';
 import '../../widgets/home/recommendation_section.dart';
 import '../../widgets/layout/space_background.dart';
 import '../search/search_screen.dart';
-import '../chat/chat_screen.dart';
 import '../scan/scan_result_screen.dart';
+import 'content_list_screen.dart';
 import '../../services/recommendation_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -160,18 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ChatScreen()),
-              );
-            },
-            icon: const Icon(
-              Icons.chat_bubble_outline,
-              color: Colors.white,
-            ),
-          ),
-          IconButton(
+            tooltip: 'Rechercher',
             onPressed: () {
               Navigator.push(
                 context,
@@ -279,9 +268,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // ===== SECTION TENDANCES =====
           if (recs.trending.isNotEmpty) ...[
-            _buildSectionHeader(context, 'Tendances', () {
-              // Voir tout
-            }),
+            _buildSectionHeader(context, 'Tendances',
+                () => _openSeeAll(context, 'Tendances', recs.trending)),
             const SizedBox(height: 16),
             TrendingSection(trending: recs.trending),
             const SizedBox(height: 32),
@@ -289,9 +277,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // ===== SECTION RECOMMANDÉ POUR VOUS =====
           if (recs.personalized.isNotEmpty) ...[
-            _buildSectionHeader(context, 'Recommandé pour vous', () {
-              // Voir tout
-            }),
+            _buildSectionHeader(context, 'Recommandé pour vous',
+                () => _openSeeAll(context, 'Recommandé pour vous', recs.personalized)),
             const SizedBox(height: 16),
             RecommendationSection(recommendations: recs.personalized),
             const SizedBox(height: 32),
@@ -299,9 +286,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // ===== SECTION RECOMMANDATIONS SUPPLÉMENTAIRES =====
           if (!_loadingRecommendations && _recommendations.isNotEmpty) ...[
-            _buildSectionHeader(context, 'Découvrez aussi', () {
-              // Voir tout
-            }),
+            _buildSectionHeader(context, 'Découvrez aussi',
+                () => _openSeeAll(context, 'Découvrez aussi', _recommendations)),
             const SizedBox(height: 16),
             ..._recommendations.take(3).map((item) {
               return Padding(
@@ -321,15 +307,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // ===== SECTION POUR VOUS (si existe) =====
           if (recs.forYou.isNotEmpty) ...[
-            _buildSectionHeader(context, 'Pour vous', () {
-              // Voir tout
-            }),
+            _buildSectionHeader(context, 'Pour vous',
+                () => _openSeeAll(context, 'Pour vous', recs.forYou)),
             const SizedBox(height: 16),
             _buildForYouList(context, recs.forYou, isTablet),
           ],
 
           const SizedBox(height: 40),
         ],
+      ),
+    );
+  }
+
+  void _openSeeAll(BuildContext context, String title, List<ContentModel> items) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ContentListScreen(title: title, items: items),
       ),
     );
   }
@@ -389,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(width: isTablet ? 16 : 12),
             const Expanded(
               child: Text(
-                'Rechercher musique, film, image...',
+                'Rechercher une musique, un artiste...',
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 15,
@@ -450,17 +444,8 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (context) => ScanResultScreen(
-                    scanResult: {
-                      'title': item.contentTitle,
-                      'artist': item.contentArtist ?? '',
-                      'year': item.contentReleaseDate ?? '',
-                      'type': item.contentType,
-                      'description': item.contentDescription ?? '',
-                      'image': item.contentImage ?? '',
-                      'content_id': item.contentId,
-                    },
-                  )),
+              builder: (context) =>
+                  ScanResultScreen(scanResult: item.toScanResult())),
         );
       },
       child: Container(

@@ -70,6 +70,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
           decoration: const InputDecoration(
             hintText: 'Nom de la playlist',
             hintStyle: TextStyle(color: Colors.white54),
+            filled: false, // sinon fond blanc du thème sous un texte blanc
             enabledBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: Colors.white24),
             ),

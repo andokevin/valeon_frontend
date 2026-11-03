@@ -46,14 +46,6 @@ class ScanProvider extends ChangeNotifier {
     await _scan(() => _service.scanAudio(file), ScanType.audio, user);
   }
 
-  Future<void> scanImage(File file, UserModel user) async {
-    await _scan(() => _service.scanImage(file), ScanType.image, user);
-  }
-
-  Future<void> scanVideo(File file, UserModel user) async {
-    await _scan(() => _service.scanVideo(file), ScanType.video, user);
-  }
-
   Future<void> _scan(
     Future<Map<String, dynamic>> Function() scanFn,
     ScanType type,

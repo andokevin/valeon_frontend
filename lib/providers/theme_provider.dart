@@ -24,10 +24,11 @@ class ThemeProvider extends ChangeNotifier {
 
   Future<void> toggleTheme() async {
     _isDarkMode = !_isDarkMode;
+    // L'écran change tout de suite, même si l'enregistrement échoue
+    notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_themeKey, _isDarkMode);
-      notifyListeners();
     } catch (e) {
       print('❌ Erreur sauvegarde thème: $e');
     }

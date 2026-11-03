@@ -62,34 +62,6 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> scanImage(String filePath) async {
-    try {
-      final formData = FormData.fromMap({
-        'source': 'file',
-        'file': await MultipartFile.fromFile(filePath, filename: 'image.jpg'),
-      });
-      final response = await _api.uploadFile('/scans/image', formData);
-      return response.data;
-    } on DioException catch (e) {
-      debugPrint('❌ Scan image error: ${e.message}');
-      throw AppException.fromDio(e);
-    }
-  }
-
-  Future<Map<String, dynamic>?> scanVideo(String filePath) async {
-    try {
-      final formData = FormData.fromMap({
-        'source': 'file',
-        'file': await MultipartFile.fromFile(filePath, filename: 'video.mp4'),
-      });
-      final response = await _api.uploadFile('/scans/video', formData);
-      return response.data;
-    } on DioException catch (e) {
-      debugPrint('❌ Scan video error: ${e.message}');
-      throw AppException.fromDio(e);
-    }
-  }
-
   Future<Map<String, dynamic>?> getScanResult(String scanId) async {
     try {
       final response = await _api.get('/scans/$scanId');
@@ -191,6 +163,30 @@ class ApiService {
     return null;
   }
 
+  /// Contenus similaires proposés par Gemini à partir d'un titre (contenu absent de la base)
+  Future<Map<String, dynamic>?> getSimilarTo({
+    required String title,
+    String? artist,
+    String type = 'music',
+    int limit = 3,
+  }) async {
+    try {
+      final response = await _api.get(
+        '/recommendations/similar-to',
+        params: {
+          'title': title,
+          if (artist != null && artist.isNotEmpty) 'artist': artist,
+          'type': type,
+          'limit': limit,
+        },
+      );
+      return response.data;
+    } on DioException catch (e) {
+      debugPrint('❌ Erreur getSimilarTo: ${e.message}');
+      return null;
+    }
+  }
+
   // ===== RECOMMENDATIONS GÉNÉRALES =====
   Future<List<dynamic>?> getPersonalizedRecommendations({String? contentType, int limit = 10}) async {
     try {
@@ -224,23 +220,6 @@ class ApiService {
       return response.data;
     } on DioException catch (e) {
       debugPrint('❌ Get trending error: ${e.message}');
-      return null;
-    }
-  }
-
-  // ===== CHAT ASSISTANT =====
-  Future<Map<String, dynamic>?> sendChatMessage(String message, {String? conversationId}) async {
-    try {
-      final response = await _api.post(
-        '/chat/message',
-        data: {
-          'message': message,
-          'conversation_id': conversationId,
-        },
-      );
-      return response.data;
-    } on DioException catch (e) {
-      debugPrint('❌ Chat error: ${e.message}');
       return null;
     }
   }

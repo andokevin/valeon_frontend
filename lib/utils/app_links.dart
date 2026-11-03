@@ -6,6 +6,8 @@ class AppLinks {
   static const String website = 'https://andokevin.github.io/valeon_frontend/';
   static const String privacyPolicy =
       'https://andokevin.github.io/valeon_frontend/privacy.html';
+  static const String deleteAccount =
+      'https://andokevin.github.io/valeon_frontend/suppression.html';
   static const String supportEmail = 'andokevin05@gmail.com';
   static const String appVersion = '2.0.0';
 

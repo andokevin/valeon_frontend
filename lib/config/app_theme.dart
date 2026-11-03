@@ -42,6 +42,21 @@ class AppColors {
     end: Alignment.bottomCenter,
     colors: [darkPurple, mediumPurple, lightPurple],
   );
+
+  // Fond du mode sombre : même structure que spaceGradient, en noir neutre
+  static const LinearGradient darkGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [darkBackground, Color(0xFF181818), darkSurface],
+  );
+
+  /// Fond d'écran principal selon le thème (mode clair = identité violette de Valeon)
+  static LinearGradient backgroundGradient(bool isDark) =>
+      isDark ? darkGradient : spaceGradient;
+
+  /// Couleur unie de fond selon le thème (écrans sans dégradé)
+  static Color backgroundColor(bool isDark) =>
+      isDark ? darkBackground : darkPurple;
 }
 
 class AppSizes {
@@ -105,21 +120,43 @@ class AppTextStyles {
 }
 
 class AppTheme {
-  // Light Theme (existant)
+  // Menus et dialogues sur fond sombre : lisibles dans les deux modes
+  static const TextStyle _dialogTitle =
+      TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white);
+  static const TextStyle _dialogContent =
+      TextStyle(fontSize: 15, color: Colors.white70);
+
+  // Light Theme : les écrans gardent le fond violet de Valeon, textes en blanc
   static ThemeData get lightTheme {
     return ThemeData(
       brightness: Brightness.light,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primaryBlue,
+        brightness: Brightness.light,
+      ).copyWith(primary: AppColors.primaryBlue),
       primaryColor: AppColors.primaryBlue,
-      scaffoldBackgroundColor: AppColors.scaffoldBackground,
+      scaffoldBackgroundColor: AppColors.darkPurple,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.textDark),
+        iconTheme: IconThemeData(color: Colors.white),
         titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: AppColors.textDark,
+          color: Colors.white,
         ),
+      ),
+      popupMenuTheme: const PopupMenuThemeData(
+        color: AppColors.surface,
+        textStyle: TextStyle(color: Colors.white),
+      ),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: AppColors.surface,
+        titleTextStyle: _dialogTitle,
+        contentTextStyle: _dialogContent,
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: const Color(0xFF8FA6FF)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -160,8 +197,19 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primaryBlue,
+        brightness: Brightness.dark,
+      ).copyWith(primary: AppColors.primaryBlue),
       primaryColor: AppColors.primaryBlue,
       scaffoldBackgroundColor: AppColors.darkBackground,
+      popupMenuTheme: const PopupMenuThemeData(
+        color: AppColors.darkSurface,
+        textStyle: TextStyle(color: AppColors.darkTextPrimary),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: const Color(0xFF8FA6FF)),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -207,7 +255,11 @@ class AppTheme {
         elevation: 8,
       ),
       dividerColor: AppColors.darkDivider,
-      dialogTheme: DialogThemeData(backgroundColor: AppColors.darkSurface),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: AppColors.darkSurface,
+        titleTextStyle: _dialogTitle,
+        contentTextStyle: _dialogContent,
+      ),
     );
   }
 }

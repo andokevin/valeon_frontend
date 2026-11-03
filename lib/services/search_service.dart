@@ -79,11 +79,10 @@ class SearchService {
     }
   }
 
+  /// Titres les plus scannés (vraies données du serveur ; liste vide si indisponible)
   Future<List<Map<String, dynamic>>> getTrending() async {
     try {
-      if (!_connectivity.isOnline) {
-        return _getMockTrending();
-      }
+      if (!_connectivity.isOnline) return [];
 
       final response = await _api.get('/search/trending');
       final data = response.data;
@@ -91,20 +90,10 @@ class SearchService {
       if (data != null && data['trending'] != null) {
         return List<Map<String, dynamic>>.from(data['trending']);
       }
-      return _getMockTrending();
+      return [];
     } catch (e) {
       debugPrint('❌ Erreur trending: $e');
-      return _getMockTrending();
+      return [];
     }
-  }
-
-  List<Map<String, dynamic>> _getMockTrending() {
-    return [
-      {'title': 'Blinding Lights', 'count': 156},
-      {'title': 'Inception', 'count': 98},
-      {'title': 'Heat Waves', 'count': 87},
-      {'title': 'Interstellar', 'count': 76},
-      {'title': 'The Weeknd', 'count': 65},
-    ];
   }
 }

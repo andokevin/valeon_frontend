@@ -19,6 +19,9 @@ class ContentModel {
   final String? youtubeId;
   final Map<String, dynamic>? metadata;
 
+  /// Données reçues de l'API telles quelles (raison, liens YouTube/Spotify…)
+  final Map<String, dynamic>? raw;
+
   const ContentModel({
     required this.contentId,
     required this.contentType,
@@ -38,6 +41,7 @@ class ContentModel {
     this.tmdbId,
     this.youtubeId,
     this.metadata,
+    this.raw,
   });
 
   String get id => contentId.toString();
@@ -64,7 +68,38 @@ class ContentModel {
       tmdbId: json['tmdb_id'],
       youtubeId: json['youtube_id'],
       metadata: json['metadata'] ?? json['content_metadata'],
+      raw: json,
     );
+  }
+
+  bool get isMusic => contentType == 'music';
+
+  /// Données pour ouvrir la page de détail (ScanResultScreen) d'une recommandation
+  Map<String, dynamic> toScanResult() {
+    final result = <String, dynamic>{...?raw};
+    result['title'] = contentTitle;
+    result['artist'] ??= contentArtist ?? contentDirector;
+    result['type'] = contentType;
+    result['image'] ??= contentImage;
+    result['description'] ??= contentDescription ?? raw?['reason'];
+    result['year'] ??= (contentReleaseDate != null && contentReleaseDate!.length >= 4)
+        ? contentReleaseDate!.substring(0, 4)
+        : null;
+    if (contentId != 0) result['content_id'] = contentId;
+
+    // Lien Spotify : celui de l'API, sinon une recherche Spotify par titre + artiste
+    if (isMusic && result['spotify'] == null) {
+      final url = raw?['spotify_url'] ??
+          (spotifyId != null
+              ? 'https://open.spotify.com/track/$spotifyId'
+              : 'https://open.spotify.com/search/${Uri.encodeComponent('$contentTitle ${contentArtist ?? ''}'.trim())}');
+      result['spotify'] = {'spotify_url': url};
+    }
+    // Lien YouTube fourni à plat par certaines réponses
+    if (result['youtube'] == null && raw?['youtube_url'] != null) {
+      result['youtube'] = {'url': raw!['youtube_url']};
+    }
+    return result;
   }
 
   Map<String, dynamic> toJson() => {

@@ -26,34 +26,6 @@ class ScanService {
     }
   }
 
-  Future<Map<String, dynamic>> scanImage(File file) async {
-    try {
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(file.path,
-            filename: file.path.split('/').last),
-        'source': 'file',
-      });
-      final response = await _api.uploadFile('/scans/image', formData);
-      return response.data;
-    } on DioException catch (e) {
-      throw AppException.fromDio(e);
-    }
-  }
-
-  Future<Map<String, dynamic>> scanVideo(File file) async {
-    try {
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(file.path,
-            filename: file.path.split('/').last),
-        'source': 'file',
-      });
-      final response = await _api.uploadFile('/scans/video', formData);
-      return response.data;
-    } on DioException catch (e) {
-      throw AppException.fromDio(e);
-    }
-  }
-
   Future<ScanModel> getScanResult(int scanId) async {
     try {
       final response = await _api.get('/scans/$scanId');

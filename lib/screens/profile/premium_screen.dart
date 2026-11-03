@@ -122,31 +122,27 @@ class PremiumScreen extends StatelessWidget {
   }
 
   Widget _buildFeatureList() {
+    // Uniquement ce que l'app propose réellement (scan audio)
     const features = [
       {
-        'icon': Icons.videocam,
-        'title': 'Scans vidéo',
-        'description': 'Identifiez films et séries depuis une vidéo',
-      },
-      {
         'icon': Icons.all_inclusive,
-        'title': 'Scans illimités',
-        'description': '999 scans/jour sans restriction',
+        'title': 'Scans audio illimités',
+        'description': 'Identifiez autant de musiques et d\'extraits que vous voulez',
       },
       {
         'icon': Icons.auto_awesome,
         'title': 'Recommandations IA',
-        'description': 'Personnalisées par intelligence artificielle',
+        'description': 'Des titres similaires choisis par intelligence artificielle',
       },
       {
-        'icon': Icons.download,
-        'title': 'Mode hors ligne',
-        'description': 'Accédez à vos scans sans internet',
+        'icon': Icons.history,
+        'title': 'Historique complet',
+        'description': 'Retrouvez tous vos scans, favoris et playlists',
       },
       {
         'icon': Icons.support_agent,
         'title': 'Support prioritaire',
-        'description': 'Réponse en moins de 24h',
+        'description': 'Réponse en moins de 24 h',
       },
     ];
 
@@ -221,7 +217,7 @@ class PremiumScreen extends StatelessWidget {
         const SizedBox(height: 10),
         _buildPricingCard(
           title: 'Annuel',
-          price: '19,99€', // ← CORRIGÉ : prix annuel correct
+          price: '79,99€', // 12 × 9,99 € = 119,88 € : 33 % d'économie
           period: '/an',
           isPopular: true,
           badge: 'Économisez 33%',
@@ -358,11 +354,12 @@ class PremiumScreen extends StatelessWidget {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
         title: const Text(
-          'Paiement',
+          'Bientôt disponible',
           style: TextStyle(color: Colors.white, fontSize: 16),
         ),
         content: const Text(
-          'L\'intégration du paiement (Stripe/RevenueCat) est à configurer.',
+          'L\'abonnement Premium arrive très prochainement. '
+          'Vous serez prévenu dès son ouverture.',
           style: TextStyle(color: Colors.white70, fontSize: 13),
         ),
         actions: [

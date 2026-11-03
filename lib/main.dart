@@ -7,7 +7,6 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'config/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/scan_provider.dart';
-import 'providers/chat_provider.dart';
 import 'providers/connectivity_provider.dart';
 import 'providers/recommendation_provider.dart';
 import 'providers/library_provider.dart';
@@ -17,14 +16,11 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/profile/premium_screen.dart';
 import 'screens/scan/scan_audio_screen.dart';
-import 'screens/scan/scan_image_screen.dart';
-import 'screens/scan/scan_video_screen.dart';
 import 'screens/scan/scan_result_screen.dart';
 import 'screens/library/history_screen.dart';
 import 'screens/library/favorites_screen.dart';
 import 'screens/library/playlists_screen.dart';
 import 'screens/library/playlist_detail_screen.dart';
-import 'screens/chat/chat_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,7 +59,6 @@ class ValeonApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ScanProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => RecommendationProvider()),
         ChangeNotifierProvider(create: (_) => LibraryProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()), // ← NOUVEAU
@@ -104,12 +99,9 @@ class ValeonApp extends StatelessWidget {
               '/register': (context) => const RegisterScreen(),
               '/premium': (context) => const PremiumScreen(),
               '/scan/audio': (context) => const ScanAudioScreen(),
-              '/scan/image': (context) => const ScanImageScreen(),
-              '/scan/video': (context) => const ScanVideoScreen(),
               '/history': (context) => const HistoryScreen(),
               '/favorites': (context) => const FavoritesScreen(),
               '/playlists': (context) => const PlaylistsScreen(),
-              '/chat': (context) => const ChatScreen(),
             },
           );
         },

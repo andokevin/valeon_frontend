@@ -5,6 +5,9 @@ import 'package:valeon/providers/connectivity_provider.dart';
 import '../../config/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/app_links.dart';
+import '../../widgets/common/theme_switch.dart';
+import 'edit_profile_screen.dart';
+import 'settings_screen.dart';
 import '../../widgets/layout/space_background.dart';
 import 'premium_screen.dart';
 
@@ -80,15 +83,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const Spacer(),
-          // IconButton(
-          //   onPressed: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(builder: (context) => const SettingsScreen()),
-          //     );
-          //   },
-          //   icon: const Icon(Icons.settings, color: Colors.white),
-          // ),
+          const ThemeSwitch(showLabel: false),
+          IconButton(
+            tooltip: 'Paramètres',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+            ),
+            icon: const Icon(Icons.settings, color: Colors.white),
+          ),
         ],
       ),
     );
@@ -305,6 +308,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildMenuItems(BuildContext context, bool isTablet) {
     return Column(
       children: [
+        _buildMenuItem(
+          icon: Icons.person_outline,
+          label: 'Modifier le profil',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildMenuItem(
+          icon: Icons.settings,
+          label: 'Paramètres',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SettingsScreen()),
+          ),
+        ),
+        const SizedBox(height: 8),
         _buildMenuItem(
           icon: Icons.help,
           label: 'Aide & Support',

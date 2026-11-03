@@ -186,21 +186,31 @@ class _SearchScreenState extends State<SearchScreen> {
                               : AppColors.textDark,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Rechercher musique, film, image...',
+                          hintText: 'Rechercher une musique, un artiste...',
                           hintStyle: TextStyle(
                             color: isDark
                                 ? AppColors.darkTextSecondary
                                 : Colors.grey[600],
                           ),
-                          border: InputBorder.none, // Pas de bordure
+                          // Le thème global ajoute un fond et une bordure de focus :
+                          // on les neutralise, la pilule parente sert de champ
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          filled: false,
+                          isDense: true,
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 14),
                         ),
                       ),
                     ),
                   ),
                   if (_searchQuery.isNotEmpty)
-                    GestureDetector(
-                      onTap: _clearSearch,
-                      child: Icon(Icons.close,
+                    IconButton(
+                      tooltip: 'Effacer',
+                      onPressed: _clearSearch,
+                      icon: Icon(Icons.close,
                           color: isDark
                               ? AppColors.darkTextSecondary
                               : AppColors.textDark),

@@ -220,6 +220,35 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Renvoie null si tout s'est bien passé, sinon le message d'erreur à afficher
+  Future<String?> updateName(String fullName) async {
+    try {
+      final user = await _authService.updateProfile(fullName: fullName);
+      _user = user;
+      await _secureStorage.saveUser(user);
+      notifyListeners();
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  /// Renvoie null si tout s'est bien passé, sinon le message d'erreur à afficher
+  Future<String?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _authService.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
   Future<void> signOut() async {
     _status = AuthStatus.loading;
     notifyListeners();

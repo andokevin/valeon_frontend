@@ -34,17 +34,12 @@ class RecommendationSection extends StatelessWidget {
     final (icon, color) = _getTypeData(item.contentType);
 
     return GestureDetector(
+      // Ouvre la fiche détaillée (infos, liens, contenus similaires proposés par Gemini)
       onTap: () {
         Navigator.pushNamed(
           context,
           '/scan/result',
-          arguments: {
-            'title': item.contentTitle,
-            'artist': item.contentArtist,
-            'type': item.contentType,
-            'image': item.contentImage,
-            'content_id': item.contentId,
-          },
+          arguments: {'scanResult': item.toScanResult()},
         );
       },
       child: Container(

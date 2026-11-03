@@ -20,7 +20,8 @@ class CustomBottomNav extends StatelessWidget {
     return Container(
       height: navHeight,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).bottomNavigationBarTheme.backgroundColor ??
+            Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),

@@ -119,18 +119,25 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     if (_result == null) return;
 
     final contentId = _result!['content_id'] ?? _result!['id'];
-    
-    if (contentId == null || contentId == 0) {
-      debugPrint('⚠️ Pas de content_id valide, impossible de charger les similaires');
-      return;
-    }
+    final title = _result!['title']?.toString();
+    final hasId = contentId is int && contentId != 0;
+
+    // Sans identifiant (ex. recommandation Gemini), on demande les similaires par titre
+    if (!hasId && (title == null || title.isEmpty)) return;
 
     setState(() {
       _loadingSimilar = true;
     });
 
     try {
-      final response = await _apiService.getSimilarContent(contentId, limit: 3);
+      final response = hasId
+          ? await _apiService.getSimilarContent(contentId, limit: 3)
+          : await _apiService.getSimilarTo(
+              title: title!,
+              artist: (_result!['artist'] ?? _result!['director'])?.toString(),
+              type: _result!['type']?.toString() ?? 'music',
+              limit: 3,
+            );
       
       if (response != null && response['recommendations'] != null) {
         // Convertir les recommandations
@@ -191,11 +198,18 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         'spotify_id': similar['spotify_id'],
         'youtube_id': similar['youtube_id'],
         'tmdb_id': similar['tmdb_id'],
+        'content_id': similar['content_id'],
         'confidence': 0.9,
       };
+      if (similar['youtube'] == null && similar['youtube_url'] != null) {
+        similarResult['youtube'] = {'url': similar['youtube_url']};
+      }
 
       if (similar['spotify'] != null) {
         similarResult['spotify'] = _convertToMapStringDynamic(similar['spotify']);
+      } else if (similar['spotify_url'] != null) {
+        // Lien de recherche Spotify fourni par le backend (sans API Spotify)
+        similarResult['spotify'] = {'spotify_url': similar['spotify_url']};
       }
       if (similar['youtube'] != null) {
         similarResult['youtube'] = _convertToMapStringDynamic(similar['youtube']);

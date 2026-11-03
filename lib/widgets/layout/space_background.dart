@@ -33,21 +33,27 @@ class _SpaceBackgroundState extends State<SpaceBackground>
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Material transparent : donne un style de texte aux écrans sans Scaffold
+    // (sinon Flutter souligne les textes en jaune : Premium, Paramètres, Historique…)
+    return Material(
+      type: MaterialType.transparency,
+      child: Stack(
       children: [
-        // Fond dégradé
+        // Fond dégradé : violet (clair) ou noir (sombre)
         Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.spaceGradient,
+          decoration: BoxDecoration(
+            gradient: AppColors.backgroundGradient(isDark),
           ),
         ),
 
-        // Étoiles animées
+        // Étoiles animées (plus discrètes en mode sombre)
         AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
             return CustomPaint(
-              painter: StarsPainter(_controller.value),
+              painter: StarsPainter(_controller.value,
+                  maxOpacity: isDark ? 0.35 : 1.0),
               size: Size.infinite,
             );
           },
@@ -56,14 +62,16 @@ class _SpaceBackgroundState extends State<SpaceBackground>
         // Contenu
         widget.child,
       ],
+      ),
     );
   }
 }
 
 class StarsPainter extends CustomPainter {
   final double animationValue;
+  final double maxOpacity;
 
-  StarsPainter(this.animationValue);
+  StarsPainter(this.animationValue, {this.maxOpacity = 1.0});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -77,7 +85,7 @@ class StarsPainter extends CustomPainter {
           (0.5 + 0.5 * math.sin(animationValue * 2 * math.pi + i));
       final radius = 1.0 + random.nextDouble() * 2.0;
 
-      paint.color = Colors.white.withValues(alpha: opacity);
+      paint.color = Colors.white.withValues(alpha: opacity * maxOpacity);
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }

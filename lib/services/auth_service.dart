@@ -156,6 +156,31 @@ class AuthService {
     }
   }
 
+  Future<UserModel> updateProfile({required String fullName}) async {
+    try {
+      final response =
+          await _api.put('/auth/me', data: {'user_full_name': fullName});
+      return UserModel.fromJson(response.data);
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
+    }
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _api.post('/auth/change-password', data: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+        'confirm_password': newPassword,
+      });
+    } on DioException catch (e) {
+      throw AppException.fromDio(e);
+    }
+  }
+
   Future<void> logout() async {
     try {
       await _api.post('/auth/logout');
